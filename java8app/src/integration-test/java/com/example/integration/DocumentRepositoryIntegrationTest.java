@@ -27,7 +27,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
-        // Add your test configuration classes here
+        IntegrationTestConfig.class
 })
 @ActiveProfiles("integration-test")
 @Transactional

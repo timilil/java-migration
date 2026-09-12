@@ -37,11 +37,9 @@ public class DocumentAccessLog implements Serializable {
     
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
-        @Lob    @Column(name = "user_agent")
+    @Column(name = "user_agent", columnDefinition = "VARCHAR(255)")
     private String userAgent;
-    
-    @Lob
-    @Column(name = "details")
+    @Column(name = "details", columnDefinition = "VARCHAR(255)")
     private String details;
     
     // Constructors

@@ -38,4 +38,12 @@ public interface DocumentShareRepository extends JpaRepository<DocumentShare, Lo
      */
     @Query("SELECT s FROM DocumentShare s WHERE s.sharedByUserId = :userId AND s.isActive = true")
     List<DocumentShare> findBySharedByUserIdAndActive(@Param("userId") Long userId);
+
+    /**
+     * Find any existing share (active or revoked) for a document/user pair.
+     * Used to reactivate a previously revoked share instead of inserting a
+     * duplicate row, which would violate the unique (document_id, shared_with_user_id) constraint.
+     */
+    @Query("SELECT s FROM DocumentShare s WHERE s.documentId = :documentId AND s.sharedWithUserId = :userId")
+    Optional<DocumentShare> findByDocumentIdAndSharedWithUserIdIncludingInactive(@Param("documentId") Long documentId, @Param("userId") Long userId);
 }

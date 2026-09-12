@@ -59,6 +59,7 @@ public class DocumentServiceSharingTest {
     @Test
     public void testShareDocument_Success() {
         when(documentRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(testDocument));
+        when(documentShareRepository.findByDocumentIdAndSharedWithUserIdIncludingInactive(1L, 2L)).thenReturn(Optional.empty());
         when(documentShareRepository.save(any(DocumentShare.class))).thenReturn(testShare);
         
         boolean result = documentService.shareDocument(1L, 1L, 2L, "VIEW");
@@ -66,6 +67,25 @@ public class DocumentServiceSharingTest {
         assertTrue(result);
         verify(documentRepository, times(1)).findByIdAndOwnerId(1L, 1L);
         verify(documentShareRepository, times(1)).save(any(DocumentShare.class));
+    }
+    
+    @Test
+    public void testShareDocument_ReactivatesRevokedShare() {
+        DocumentShare revokedShare = new DocumentShare(1L, 1L, 2L, "VIEW");
+        revokedShare.setId(1L);
+        revokedShare.setIsActive(false);
+        
+        when(documentRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(testDocument));
+        when(documentShareRepository.findByDocumentIdAndSharedWithUserIdIncludingInactive(1L, 2L))
+                .thenReturn(Optional.of(revokedShare));
+        when(documentShareRepository.save(any(DocumentShare.class))).thenReturn(revokedShare);
+        
+        boolean result = documentService.shareDocument(1L, 1L, 2L, "EDIT");
+        
+        assertTrue(result);
+        assertTrue(revokedShare.getIsActive());
+        assertEquals("EDIT", revokedShare.getPermissionType());
+        verify(documentShareRepository, times(1)).save(revokedShare);
     }
     
     @Test
@@ -94,6 +114,7 @@ public class DocumentServiceSharingTest {
     public void testShareDocument_WithEditPermission() {
         DocumentShare editShare = new DocumentShare(1L, 1L, 2L, "EDIT");
         when(documentRepository.findByIdAndOwnerId(1L, 1L)).thenReturn(Optional.of(testDocument));
+        when(documentShareRepository.findByDocumentIdAndSharedWithUserIdIncludingInactive(1L, 2L)).thenReturn(Optional.empty());
         when(documentShareRepository.save(any(DocumentShare.class))).thenReturn(editShare);
         
         boolean result = documentService.shareDocument(1L, 1L, 2L, "EDIT");

@@ -22,7 +22,7 @@ public class Document implements Serializable {
     @Column(name = "title", nullable = false)
     private String title;
     
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "VARCHAR(255)")
     private String description;
     
     @Column(name = "owner_id", nullable = false)

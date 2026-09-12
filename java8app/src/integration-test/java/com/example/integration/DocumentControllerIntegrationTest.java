@@ -30,7 +30,7 @@ import static org.junit.Assert.*;
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
         IntegrationTestConfig.class
 })
-@ActiveProfiles("integration-test")
+@ActiveProfiles({"integration-test", "prod"})
 @Transactional
 @Sql(scripts = {
     "classpath:data/test-users.sql",
@@ -104,13 +104,13 @@ public class DocumentControllerIntegrationTest {
     
     @Test
     public void testGetDocumentShares() {
-        // Document 1 is shared with 2 users
+        // Document 1 is shared with 3 users: Bob (EDIT), Charlie (VIEW), Eve (VIEW, expiring)
         List<DocumentShare> shares = documentService.getDocumentShares(1L);
         
         assertNotNull(shares);
-        assertEquals(2, shares.size());
+        assertEquals(3, shares.size());
         
-        // Verify one share is EDIT and one is VIEW
+        // Verify one share is EDIT and two are VIEW
         long editCount = shares.stream()
             .filter(s -> "EDIT".equals(s.getPermissionType()))
             .count();
@@ -119,7 +119,7 @@ public class DocumentControllerIntegrationTest {
             .count();
         
         assertEquals(1, editCount);
-        assertEquals(1, viewCount);
+        assertEquals(2, viewCount);
     }
     
     @Test

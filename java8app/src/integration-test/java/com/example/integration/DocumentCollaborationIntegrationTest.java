@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
-        // Add your test configuration classes here
+        IntegrationTestConfig.class
 })
 @ActiveProfiles("integration-test")
 @Transactional
@@ -286,8 +286,9 @@ public class DocumentCollaborationIntegrationTest {
         assertTrue(collabHasAccess);
         
         // 6. Get access log
+        // Note: shareDocument() itself logs a "SHARE" event, plus the two explicit logDocumentAccess calls above
         List<DocumentAccessLog> logs = documentService.getDocumentAccessLog(newDoc.getId());
-        assertEquals(2, logs.size());
+        assertEquals(3, logs.size());
         
         // 7. Verify statistics
         String stats = documentService.getAccessStatistics(newDoc.getId());

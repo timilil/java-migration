@@ -190,8 +190,15 @@ public class DocumentService {
             return false;
         }
         
-        // Create share record
-        DocumentShare share = new DocumentShare(documentId, ownerId, sharedWithUserId, permissionType);
+        // Reuse an existing (possibly revoked) share for this document/user pair instead of
+        // inserting a new row, since (document_id, shared_with_user_id) is unique
+        Optional<DocumentShare> existingShareOpt = documentShareRepository
+                .findByDocumentIdAndSharedWithUserIdIncludingInactive(documentId, sharedWithUserId);
+        DocumentShare share = existingShareOpt.orElseGet(
+                () -> new DocumentShare(documentId, ownerId, sharedWithUserId, permissionType));
+        share.setSharedByUserId(ownerId);
+        share.setPermissionType(permissionType);
+        share.setIsActive(true);
         documentShareRepository.save(share);
         
         // Log access

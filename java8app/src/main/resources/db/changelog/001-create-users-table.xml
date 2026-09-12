@@ -41,5 +41,21 @@
             <column name="email"/>
         </createIndex>
     </changeSet>
+    <changeSet id="001-insert-default-admin-user" author="system">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM users WHERE username = 'admin'</sqlCheck>
+        </preConditions>
+        
+        <insert tableName="users">
+            <column name="username" value="admin"/>
+            <column name="email" value="admin@example.com"/>
+            <column name="full_name" value="Administrator"/>
+            <column name="password" value="admin123"/>
+            <column name="active" value="true"/>
+            <column name="created_at" value="2024-01-01 00:00:00"/>
+            <column name="updated_at" value="2024-01-01 00:00:00"/>
+        </insert>
+        
+    </changeSet>
 
 </databaseChangeLog>

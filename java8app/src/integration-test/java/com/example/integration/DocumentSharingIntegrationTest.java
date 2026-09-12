@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 
@@ -273,11 +274,11 @@ public class DocumentSharingIntegrationTest {
         // Verify no category ID overlap
         List<Long> aliceCatIds = aliceCategories.stream()
             .map(DocumentCategory::getId)
-            .toList();
+            .collect(Collectors.toList());
         
         List<Long> bobCatIds = bobCategories.stream()
             .map(DocumentCategory::getId)
-            .toList();
+            .collect(Collectors.toList());
         
         for (Long id : aliceCatIds) {
             assertFalse(bobCatIds.contains(id));

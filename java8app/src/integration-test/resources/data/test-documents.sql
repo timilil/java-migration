@@ -18,3 +18,6 @@ INSERT INTO documents (id, title, description, owner_id, content_type, file_size
 VALUES
     (7, 'Training Materials', 'New employee training guide', 3, 'application/pdf', 4096, '/storage/training.pdf', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true),
     (8, 'Process Documentation', 'Standard operating procedures', 3, 'text/plain', 2560, '/storage/process.txt', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, true);
+
+-- Advance identity sequence so subsequently saved entities don't collide with these fixed IDs
+ALTER TABLE documents ALTER COLUMN id RESTART WITH 100;
