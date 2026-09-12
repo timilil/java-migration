@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
+
+    <!-- Create document_categories table for document organization -->
+    <changeSet id="003-create-document-categories-table" author="migration">
+        <createTable tableName="document_categories">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)" >
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="owner_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_categories_owner_id" references="users(id)"/>
+            </column>
+            <column name="color_code" type="VARCHAR(7)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true"/>
+        </createTable>
+        
+        <!-- Create index on owner_id -->
+        <createIndex indexName="idx_doc_categories_owner_id" tableName="document_categories">
+            <column name="owner_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Create document_shares table for document sharing and collaboration -->
+    <changeSet id="003-create-document-shares-table" author="migration">
+        <createTable tableName="document_shares">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_shares_document_id" references="documents(id)"/>
+            </column>
+            <column name="shared_by_user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_shares_shared_by" references="users(id)"/>
+            </column>
+            <column name="shared_with_user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_shares_shared_with" references="users(id)"/>
+            </column>
+            <column name="permission_type" type="VARCHAR(20)" >
+                <constraints nullable="false"/>
+            </column>
+            <column name="shared_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="expires_at" type="TIMESTAMP"/>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true"/>
+        </createTable>
+        
+        <!-- Create unique constraint to prevent duplicate shares -->
+        <addUniqueConstraint tableName="document_shares" columnNames="document_id,shared_with_user_id" constraintName="uk_doc_shares_unique"/>
+        
+        <!-- Create indexes for efficient queries -->
+        <createIndex indexName="idx_doc_shares_document_id" tableName="document_shares">
+            <column name="document_id"/>
+        </createIndex>
+        <createIndex indexName="idx_doc_shares_shared_with_user_id" tableName="document_shares">
+            <column name="shared_with_user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_doc_shares_shared_by_user_id" tableName="document_shares">
+            <column name="shared_by_user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Create document_access_logs table for audit trail -->
+    <changeSet id="003-create-document-access-logs-table" author="migration">
+        <createTable tableName="document_access_logs">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="document_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_logs_document_id" references="documents(id)"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false" foreignKeyName="fk_doc_logs_user_id" references="users(id)"/>
+            </column>
+            <column name="action_type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="accessed_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ip_address" type="VARCHAR(45)"/>
+            <column name="user_agent" type="TEXT"/>
+            <column name="details" type="TEXT"/>
+        </createTable>
+        
+        <!-- Create indexes for efficient audit queries -->
+        <createIndex indexName="idx_access_logs_document_id" tableName="document_access_logs">
+            <column name="document_id"/>
+        </createIndex>
+        <createIndex indexName="idx_access_logs_user_id" tableName="document_access_logs">
+            <column name="user_id"/>
+        </createIndex>
+        <createIndex indexName="idx_access_logs_accessed_at" tableName="document_access_logs">
+            <column name="accessed_at"/>
+        </createIndex>
+        <createIndex indexName="idx_access_logs_action_type" tableName="document_access_logs">
+            <column name="action_type"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

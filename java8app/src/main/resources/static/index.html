@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Management System - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card h2::before {
+            content: '📊';
+            font-size: 20px;
+        }
+
+        .card.users h2::before { content: '👥'; }
+        .card.documents h2::before { content: '📄'; }
+        .card.sharing h2::before { content: '🔗'; }
+        .card.categories h2::before { content: '🏷️'; }
+        .card.audit h2::before { content: '📋'; }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            min-width: 120px;
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+        }
+
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        button.secondary:hover {
+            background: #d0d0d0;
+        }
+
+        button.danger {
+            background: #f44336;
+        }
+
+        button.danger:hover {
+            background: #da190b;
+        }
+
+        .result-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .result-box.error {
+            background: #ffebee;
+            border-left-color: #f44336;
+            color: #c62828;
+        }
+
+        .result-box.success {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+            color: #2e7d32;
+        }
+
+        .list-item {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+        }
+
+        .list-item small {
+            color: #999;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar input, .filter-bar select {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 5px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .stat {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            border-top: 3px solid #667eea;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab-btn {
+            padding: 10px 15px;
+            background: transparent;
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-badge.active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-badge.inactive {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                min-width: auto;
+            }
+
+            header {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Document Management System</h1>
+            <p>Comprehensive UI demonstrating all API endpoints | Profiles: dev (status only) | prod (full features)</p>
+        </header>
+
+        <div class="dashboard">
+            <!-- USERS SECTION -->
+            <div class="card users">
+                <h2>User Management</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="users-list">List</button>
+                    <button class="tab-btn" data-tab="users-create">Create</button>
+                    <button class="tab-btn" data-tab="users-search">Search</button>
+                </div>
+
+                <!-- List Users Tab -->
+                <div class="tab-content active" id="users-list">
+                    <button class="secondary" onclick="listAllUsers()">🔄 Refresh Users</button>
+                    <div class="result-box" id="usersList"></div>
+                </div>
+
+                <!-- Create User Tab -->
+                <div class="tab-content" id="users-create">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="newUsername" placeholder="john_doe">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="newEmail" placeholder="john@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="newPassword" placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Full Name</label>
+                        <input type="text" id="newFullName" placeholder="John Doe">
+                    </div>
+                    <button onclick="createUser()">✨ Create User</button>
+                    <div class="result-box" id="createUserResult"></div>
+                </div>
+
+                <!-- Search User Tab -->
+                <div class="tab-content" id="users-search">
+                    <div class="form-group">
+                        <label>Search by Username</label>
+                        <input type="text" id="searchUsername" placeholder="Enter username">
+                    </div>
+                    <button onclick="searchUser()">🔍 Search</button>
+                    <div class="result-box" id="searchUserResult"></div>
+                </div>
+            </div>
+
+            <!-- DOCUMENTS SECTION -->
+            <div class="card documents">
+                <h2>Document Management</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="docs-list">List</button>
+                    <button class="tab-btn" data-tab="docs-create">Create</button>
+                    <button class="tab-btn" data-tab="docs-search">Search</button>
+                </div>
+
+                <!-- List Documents Tab -->
+                <div class="tab-content active" id="docs-list">
+                    <div class="form-group">
+                        <label>Owner ID</label>
+                        <input type="number" id="docsOwnerId" placeholder="1" value="1">
+                    </div>
+                    <button class="secondary" onclick="listDocuments()">🔄 Load Documents</button>
+                    <div class="result-box" id="docsList"></div>
+                </div>
+
+                <!-- Create Document Tab -->
+                <div class="tab-content" id="docs-create">
+                    <div class="form-group">
+                        <label>Owner ID</label>
+                        <input type="number" id="docOwnerId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="docTitle" placeholder="My Document">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="docDescription" placeholder="Document description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Content Type</label>
+                        <input type="text" id="docContentType" placeholder="application/pdf" value="application/pdf">
+                    </div>
+                    <div class="form-group">
+                        <label>File Size (bytes)</label>
+                        <input type="number" id="docFileSize" placeholder="1024" value="1024">
+                    </div>
+                    <button onclick="createDocument()">✨ Create Document</button>
+                    <div class="result-box" id="createDocResult"></div>
+                </div>
+
+                <!-- Search Documents Tab -->
+                <div class="tab-content" id="docs-search">
+                    <div class="form-group">
+                        <label>Search Title</label>
+                        <input type="text" id="searchDocTitle" placeholder="Search by title...">
+                    </div>
+                    <button onclick="searchDocuments()">🔍 Search</button>
+                    <div class="result-box" id="searchDocResult"></div>
+                </div>
+            </div>
+
+            <!-- SHARING SECTION -->
+            <div class="card sharing">
+                <h2>Document Sharing</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="sharing-share">Share</button>
+                    <button class="tab-btn" data-tab="sharing-view">View Shares</button>
+                    <button class="tab-btn" data-tab="sharing-access">Check Access</button>
+                </div>
+
+                <!-- Share Document Tab -->
+                <div class="tab-content active" id="sharing-share">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="shareDocId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Owner ID</label>
+                        <input type="number" id="shareOwnerId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Share With User ID</label>
+                        <input type="number" id="shareUserId" placeholder="2" value="2">
+                    </div>
+                    <div class="form-group">
+                        <label>Permission Type</label>
+                        <select id="sharePermission">
+                            <option value="VIEW">VIEW</option>
+                            <option value="EDIT">EDIT</option>
+                            <option value="SHARE">SHARE</option>
+                        </select>
+                    </div>
+                    <button onclick="shareDocument()">🔗 Share Document</button>
+                    <div class="result-box" id="shareDocResult"></div>
+                </div>
+
+                <!-- View Shares Tab -->
+                <div class="tab-content" id="sharing-view">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="viewSharesDocId" placeholder="1" value="1">
+                    </div>
+                    <button class="secondary" onclick="viewDocumentShares()">👁️ View Shares</button>
+                    <div class="result-box" id="viewSharesResult"></div>
+                </div>
+
+                <!-- Check Access Tab -->
+                <div class="tab-content" id="sharing-access">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="checkAccessDocId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>User ID</label>
+                        <input type="number" id="checkAccessUserId" placeholder="2" value="2">
+                    </div>
+                    <button onclick="checkDocumentAccess()">🔐 Check Access</button>
+                    <div class="result-box" id="checkAccessResult"></div>
+                </div>
+            </div>
+
+            <!-- CATEGORIES SECTION -->
+            <div class="card categories">
+                <h2>Document Categories</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="cat-list">List</button>
+                    <button class="tab-btn" data-tab="cat-create">Create</button>
+                </div>
+
+                <!-- List Categories Tab -->
+                <div class="tab-content active" id="cat-list">
+                    <div class="form-group">
+                        <label>Owner ID</label>
+                        <input type="number" id="catOwnerId" placeholder="1" value="1">
+                    </div>
+                    <button class="secondary" onclick="listCategories()">🔄 Load Categories</button>
+                    <div class="result-box" id="categoriesList"></div>
+                </div>
+
+                <!-- Create Category Tab -->
+                <div class="tab-content" id="cat-create">
+                    <div class="form-group">
+                        <label>Owner ID</label>
+                        <input type="number" id="newCatOwnerId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Category Name</label>
+                        <input type="text" id="newCatName" placeholder="Finance">
+                    </div>
+                    <button onclick="createCategory()">➕ Create Category</button>
+                    <div class="result-box" id="createCatResult"></div>
+                </div>
+            </div>
+
+            <!-- AUDIT & LOGS SECTION -->
+            <div class="card audit">
+                <h2>Access Audit & Logs</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="audit-log">Full Log</button>
+                    <button class="tab-btn" data-tab="audit-recent">Recent (7 days)</button>
+                    <button class="tab-btn" data-tab="audit-stats">Statistics</button>
+                </div>
+
+                <!-- Full Access Log Tab -->
+                <div class="tab-content active" id="audit-log">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="auditDocId" placeholder="1" value="1">
+                    </div>
+                    <button class="secondary" onclick="getAccessLog()">📋 Get Access Log</button>
+                    <div class="result-box" id="accessLogResult"></div>
+                </div>
+
+                <!-- Recent Access Logs Tab -->
+                <div class="tab-content" id="audit-recent">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="recentDocId" placeholder="1" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Days Back</label>
+                        <input type="number" id="daysBack" placeholder="7" value="7">
+                    </div>
+                    <button class="secondary" onclick="getRecentAccessLogs()">🕐 Get Recent Logs</button>
+                    <div class="result-box" id="recentLogsResult"></div>
+                </div>
+
+                <!-- Statistics Tab -->
+                <div class="tab-content" id="audit-stats">
+                    <div class="form-group">
+                        <label>Document ID</label>
+                        <input type="number" id="statsDocId" placeholder="1" value="1">
+                    </div>
+                    <button class="secondary" onclick="getAccessStatistics()">📊 Get Statistics</button>
+                    <div class="result-box" id="statsResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // Configuration
+        // ============================================
+        const API_BASE = '/api';
+        
+        // ============================================
+        // Utility Functions
+        // ============================================
+        function showResult(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.className = 'result-box' + (isError ? ' error' : ' success');
+                element.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            }
+        }
+
+        function showError(elementId, error) {
+            showResult(elementId, `Error: ${error.message || error}`, true);
+        }
+
+        async function apiCall(method, endpoint, data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            };
+            if (data) options.body = JSON.stringify(data);
+            
+            const response = await fetch(`${API_BASE}${endpoint}`, options);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json().catch(() => response.text());
+        }
+
+        // ============================================
+        // Tab Navigation
+        // ============================================
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const card = this.closest('.card');
+                const tabName = this.dataset.tab;
+                
+                // Hide all tabs in this card
+                card.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                
+                // Show selected tab
+                document.getElementById(tabName)?.classList.add('active');
+                this.classList.add('active');
+            });
+        });
+
+        // ============================================
+        // USER ENDPOINTS
+        // ============================================
+        async function listAllUsers() {
+            try {
+                showResult('usersList', '⏳ Loading...');
+                const users = await apiCall('GET', '/users');
+                const formatted = Array.isArray(users) 
+                    ? users.map(u => `ID: ${u.id} | ${u.username} (${u.email})`).join('\n')
+                    : 'No users found. (Try prod profile: --spring.profiles.active=prod)';
+                showResult('usersList', formatted);
+            } catch (e) {
+                showError('usersList', e);
+            }
+        }
+
+        async function createUser() {
+            try {
+                const user = {
+                    username: document.getElementById('newUsername').value,
+                    email: document.getElementById('newEmail').value,
+                    password: document.getElementById('newPassword').value,
+                    fullName: document.getElementById('newFullName').value
+                };
+                
+                if (!user.username || !user.email || !user.password) {
+                    throw new Error('Please fill in all fields');
+                }
+
+                const result = await apiCall('POST', '/users', user);
+                showResult('createUserResult', result);
+                setTimeout(() => listAllUsers(), 1000);
+            } catch (e) {
+                showError('createUserResult', e);
+            }
+        }
+
+        async function searchUser() {
+            try {
+                const username = document.getElementById('searchUsername').value;
+                if (!username) throw new Error('Enter a username');
+                
+                const result = await apiCall('GET', `/users/search/username?username=${encodeURIComponent(username)}`);
+                showResult('searchUserResult', result);
+            } catch (e) {
+                showError('searchUserResult', e);
+            }
+        }
+
+        // ============================================
+        // DOCUMENT ENDPOINTS
+        // ============================================
+        async function listDocuments() {
+            try {
+                const ownerId = document.getElementById('docsOwnerId').value || '1';
+                showResult('docsList', '⏳ Loading...');
+                const docs = await apiCall('GET', `/documents/user/${ownerId}`);
+                const formatted = Array.isArray(docs)
+                    ? docs.map(d => `ID: ${d.id} | ${d.title} (${d.contentType})`).join('\n')
+                    : 'No documents found';
+                showResult('docsList', formatted);
+            } catch (e) {
+                showError('docsList', e);
+            }
+        }
+
+        async function createDocument() {
+            try {
+                const doc = {
+                    title: document.getElementById('docTitle').value,
+                    description: document.getElementById('docDescription').value,
+                    ownerId: parseInt(document.getElementById('docOwnerId').value || '1'),
+                    contentType: document.getElementById('docContentType').value,
+                    fileSize: parseInt(document.getElementById('docFileSize').value || '0'),
+                    storagePath: '/storage/default'
+                };
+                
+                if (!doc.title) throw new Error('Please enter a title');
+
+                const result = await apiCall('POST', '/documents', doc);
+                showResult('createDocResult', result);
+            } catch (e) {
+                showError('createDocResult', e);
+            }
+        }
+
+        async function searchDocuments() {
+            try {
+                const title = document.getElementById('searchDocTitle').value;
+                if (!title) throw new Error('Enter a search term');
+                
+                const result = await apiCall('GET', `/documents/search?title=${encodeURIComponent(title)}`);
+                const formatted = Array.isArray(result)
+                    ? result.map(d => `ID: ${d.id} | ${d.title}`).join('\n')
+                    : result;
+                showResult('searchDocResult', formatted);
+            } catch (e) {
+                showError('searchDocResult', e);
+            }
+        }
+
+        // ============================================
+        // SHARING ENDPOINTS
+        // ============================================
+        async function shareDocument() {
+            try {
+                const docId = document.getElementById('shareDocId').value;
+                const req = {
+                    docId: docId,
+                    ownerId: document.getElementById('shareOwnerId').value,
+                    sharedWithUserId: document.getElementById('shareUserId').value,
+                    permissionType: document.getElementById('sharePermission').value
+                };
+
+                const result = await apiCall('POST', `/documents/${docId}/share`, req);
+                showResult('shareDocResult', result);
+            } catch (e) {
+                showError('shareDocResult', e);
+            }
+        }
+
+        async function viewDocumentShares() {
+            try {
+                const docId = document.getElementById('viewSharesDocId').value || '1';
+                const shares = await apiCall('GET', `/documents/${docId}/shares`);
+                const formatted = Array.isArray(shares)
+                    ? shares.map(s => `Share ID: ${s.id} | User: ${s.sharedWithUserId} | Permission: ${s.permissionType}`).join('\n')
+                    : 'No shares found';
+                showResult('viewSharesResult', formatted);
+            } catch (e) {
+                showError('viewSharesResult', e);
+            }
+        }
+
+        async function checkDocumentAccess() {
+            try {
+                const docId = document.getElementById('checkAccessDocId').value || '1';
+                const userId = document.getElementById('checkAccessUserId').value || '2';
+                const hasAccess = await apiCall('GET', `/documents/${docId}/access?userId=${userId}`);
+                showResult('checkAccessResult', `User ${userId} has access to document ${docId}: ${hasAccess}`);
+            } catch (e) {
+                showError('checkAccessResult', e);
+            }
+        }
+
+        // ============================================
+        // CATEGORY ENDPOINTS
+        // ============================================
+        async function listCategories() {
+            try {
+                const ownerId = document.getElementById('catOwnerId').value || '1';
+                showResult('categoriesList', '⏳ Loading...');
+                const cats = await apiCall('GET', `/documents/categories/${ownerId}`);
+                const formatted = Array.isArray(cats)
+                    ? cats.map(c => `ID: ${c.id} | ${c.name} (Owner: ${c.ownerId})`).join('\n')
+                    : 'No categories found';
+                showResult('categoriesList', formatted);
+            } catch (e) {
+                showError('categoriesList', e);
+            }
+        }
+
+        async function createCategory() {
+            try {
+                const cat = {
+                    name: document.getElementById('newCatName').value,
+                    ownerId: document.getElementById('newCatOwnerId').value
+                };
+                
+                if (!cat.name) throw new Error('Please enter a category name');
+
+                const result = await apiCall('POST', '/documents/categories', cat);
+                showResult('createCatResult', result);
+            } catch (e) {
+                showError('createCatResult', e);
+            }
+        }
+
+        // ============================================
+        // AUDIT ENDPOINTS
+        // ============================================
+        async function getAccessLog() {
+            try {
+                const docId = document.getElementById('auditDocId').value || '1';
+                showResult('accessLogResult', '⏳ Loading...');
+                const logs = await apiCall('GET', `/documents/${docId}/access-log`);
+                const formatted = Array.isArray(logs)
+                    ? logs.map(l => `Action: ${l.action} | User: ${l.userId} | Time: ${l.timestamp}`).join('\n')
+                    : 'No logs found';
+                showResult('accessLogResult', formatted);
+            } catch (e) {
+                showError('accessLogResult', e);
+            }
+        }
+
+        async function getRecentAccessLogs() {
+            try {
+                const docId = document.getElementById('recentDocId').value || '1';
+                const days = document.getElementById('daysBack').value || '7';
+                showResult('recentLogsResult', '⏳ Loading...');
+                const logs = await apiCall('GET', `/documents/${docId}/access-log/recent?days=${days}`);
+                const formatted = Array.isArray(logs)
+                    ? logs.map(l => `Action: ${l.action} | User: ${l.userId} | Time: ${l.timestamp}`).join('\n')
+                    : 'No recent logs found';
+                showResult('recentLogsResult', formatted);
+            } catch (e) {
+                showError('recentLogsResult', e);
+            }
+        }
+
+        async function getAccessStatistics() {
+            try {
+                const docId = document.getElementById('statsDocId').value || '1';
+                showResult('statsResult', '⏳ Loading...');
+                const stats = await apiCall('GET', `/documents/${docId}/access-stats`);
+                showResult('statsResult', stats);
+            } catch (e) {
+                showError('statsResult', e);
+            }
+        }
+
+        // ============================================
+        // Initialize on page load
+        // ============================================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard loaded. Attempting to load data...');
+            // Load initial data - these will fail gracefully in dev profile
+            setTimeout(() => {
+                listAllUsers().catch(() => {
+                    document.getElementById('usersList').textContent = 
+                        'Note: User endpoints only available in prod profile.\nStart app with: --spring.profiles.active=prod';
+                    document.getElementById('usersList').classList.add('error');
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>

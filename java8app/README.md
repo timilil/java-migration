@@ -13,8 +13,12 @@ java8app/
 │   │   │   ├── Application.java              # Main entry point with manual Jetty + Spring init
 │   │   │   ├── config/                       # Spring configuration classes
 │   │   │   │   ├── SpringConfig.java         # Core Spring beans (datasource, liquibase for prod)
-│   │   │   │   └── JpaConfig.java            # JPA repositories (prod profile only)
+│   │   │   │   ├── JpaConfig.java            # JPA repositories (prod profile only)
+│   │   │   ├── WebConfig.java                # Web MVC config with static resource handlers
 │   │   │   ├── controller/                   # REST controllers
+│   │   │   │   ├── StatusController.java     # Serves home page UI at root path
+│   │   │   │   ├── UserController.java       # User CRUD & search endpoints
+│   │   │   │   └── DocumentController.java   # Document management & collaboration endpoints
 │   │   │   ├── entity/                       # JPA entities
 │   │   │   ├── repository/                   # Data access repositories (prod profile only)
 │   │   │   └── service/                      # Business logic services
@@ -24,10 +28,17 @@ java8app/
 │   │       ├── application-prod.properties    # Production profile (PostgreSQL with Liquibase)
 │   │       ├── application-test.properties    # Test profile
 │   │       ├── application-integration-test.properties  # Integration test profile
+│   │       ├── static/
+│   │       │   ├── pages/                    # Feature-specific pages
+│   │       │   │   ├── users.html            # User management (CRUD operations)
+│   │       │   │   ├── documents.html        # Document management (CRUD + search)
+│   │       │   │   ├── sharing.html          # Document sharing (permissions, access control)
+│   │       │   │   ├── categories.html       # Category management
+│   │       │   │   └── audit.html            # Access logs and statistics
 │   │       └── db/changelog/                 # Liquibase database migrations (prod only)
 │   ├── test/
 │   │   └── java/com/example/service/
-│   │       └── UserServiceTest.java          # Unit tests
+│   │       └── UserServiceTest.java          # Unit tests (49 tests total)
 │   └── integration-test/
 │       └── java/com/example/integration/
 │           └── UserRepositoryIntegrationTest.java  # Integration tests
@@ -103,7 +114,129 @@ java -jar target/java8-spring-app-1.0.0.jar --spring.profiles.active=dev
 - Spring component scanning discovers all @Component, @Service, @Controller beans
 - ✅ Application starts successfully
 - ✅ Server responds on localhost:8080
-- Visit `http://localhost:8080/` for a status page confirming the app is running and showing the active profile
+- ✅ Login page at `http://localhost:8080/login` (demo credentials required)
+
+## User Authentication
+
+The application includes a simple authentication system with login/logout functionality.
+
+**Demo Credentials:**
+- **Username:** admin
+- **Password:** admin123
+
+**Features:**
+- Form-based login at `/login`
+- Session-based authentication
+- Protected pages (require login)
+- Public API endpoints (no authentication required)
+- Logout functionality
+
+**Login Flow:**
+1. Access `http://localhost:8080/`
+2. Redirected to `/login` automatically
+3. Enter credentials (admin / admin123)
+4. Redirected to home page after successful login
+5. Click logout button to end session
+
+**Technical Details:**
+- AuthUser entity stores authentication credentials
+- Liquibase migration 004 creates auth_user table
+- Spring Security configuration enforces authentication
+- Jetty SessionManager handles session state
+- **NOTE:** Passwords are NOT hashed (for demo). Implement BCrypt for production.
+
+### Web Dashboard UI
+
+A simple multi-page application is included to interact with all API endpoints:
+
+**URL:** `http://localhost:8080/` (Home page with navigation)
+
+**Architecture:**
+- **Home Page** at `/` — Navigation dashboard with links to feature pages
+- **Feature Pages** — Separate dedicated pages for each operation type
+  - `/pages/users.html` — User management (create, read, update, delete)
+  - `/pages/documents.html` — Document management (CRUD + full-text search)
+  - `/pages/sharing.html` — Document sharing and access control
+  - `/pages/categories.html` — Category management for documents
+  - `/pages/audit.html` — Access logs and usage statistics
+
+**Features:**
+- **Clean & Simple:** One page per feature area, easy to navigate
+- **Interactive Forms:** Tab-based interface for different operations
+- **Live API Testing:** All endpoints tested interactively from the UI
+- **Error Handling:** Proper error display with HTTP status codes
+- **No External Dependencies:** Pure HTML/CSS/JavaScript (packaged in JAR)
+- **Responsive Design:** Works on desktop and mobile browsers
+
+**Profiles:**
+- **dev:** Home page shows status info and system information (no API access)
+- **prod:** Full interactive pages with all API operations enabled
+
+**Endpoint Coverage (All 22+ endpoints):**
+
+*Users (6 endpoints):*
+- `GET /api/users` — List all users
+- `GET /api/users/{id}` — Get user by ID
+- `GET /api/users/search/username?username=...` — Search by username
+- `POST /api/users` — Create new user
+- `PUT /api/users/{id}` — Update user
+- `DELETE /api/users/{id}` — Delete user
+
+*Documents (8 endpoints):*
+- `GET /api/documents/user/{ownerId}` — Get user's documents
+- `GET /api/documents/{id}` — Get document by ID
+- `GET /api/documents/search?title=...` — Search documents
+- `POST /api/documents` — Create document
+- `PUT /api/documents/{id}` — Update document
+- `DELETE /api/documents/{id}` — Delete document (soft delete)
+- `GET /api/documents/categories/{ownerId}` — List categories
+- `POST /api/documents/categories` — Create category
+
+*Sharing & Collaboration (4 endpoints):*
+- `POST /api/documents/{id}/share` — Share document with user
+- `DELETE /api/documents/{id}/share/{shareId}` — Revoke share
+- `GET /api/documents/{id}/shares` — Get all shares for document
+- `GET /api/documents/shared-with/{userId}` — Get documents shared with user
+- `GET /api/documents/{id}/access` — Check if user has access
+
+*Audit & Access Logs (3 endpoints):*
+- `GET /api/documents/{id}/access-log` — Get full access log
+- `GET /api/documents/{id}/access-log/recent?days=7` — Get recent logs
+- `GET /api/documents/{id}/access-stats` — Get access statistics
+
+**Quick Start with UI:**
+
+```bash
+# Build the application (UI is packaged in JAR)
+mvn clean package
+
+# Run with dev profile (status page only)
+java -jar target/java8-spring-app-1.0.0.jar --spring.profiles.active=dev
+# Visit: http://localhost:8080/
+
+# Run with prod profile (full interactive dashboard)
+java -jar target/java8-spring-app-1.0.0.jar --spring.profiles.active=prod
+# Visit: http://localhost:8080/
+# Create test users/documents and use the interactive UI
+```
+
+**Implementation Details:**
+- **Served by:** `StatusController.java` (detects active profile and renders appropriate UI)
+- **Packaging:** Static HTML served directly from controller (no additional build tools needed)
+- **Size:** ~32KB embedded in JAR (~44MB total)
+- **Technologies:** Vanilla JavaScript, HTML5, CSS3 (no external dependencies, works offline)
+- **Error Handling:** User-friendly error messages for all API failures
+- **Profile-Aware:** Automatically shows/hides features based on `--spring.profiles.active`
+
+**Example Usage Flow:**
+
+1. Start app in prod profile
+2. Go to `http://localhost:8080/`
+3. Use "User Management" tab to create a test user
+4. Use "Documents" tab to create a document
+5. Use "Sharing" tab to share the document with another user
+6. Use "Audit Logs" tab to view access history
+7. All changes reflect in database immediately
 
 ### Production Profile (PostgreSQL Required)
 
@@ -218,7 +351,10 @@ spring.liquibase.enabled=true
 
 ## Known Issues & Notes
 
-1. **404 on user endpoints in dev profile**: This is expected. Dev profile intentionally disables `UserController`/`UserService` (no database), so there are no HTTP routes registered. The server itself starts and runs fine — check the startup logs for `✅ Jetty server started successfully`. Use `--spring.profiles.active=prod` to enable the `/api/users` endpoints.
+1. **Dashboard UI and API Endpoints**: The dashboard at `http://localhost:8080/` works in both dev and prod profiles:
+   - **dev profile:** Shows status page only (UserController and DocumentController endpoints disabled)
+   - **prod profile:** Shows full interactive dashboard with all API endpoints enabled
+   - To use all dashboard features, run with `--spring.profiles.active=prod`
 
 2. **Dev Profile Architecture**: 
    - No database dependencies (UserService and UserController disabled via @Profile("prod"))
@@ -227,4 +363,12 @@ spring.liquibase.enabled=true
    - Allows clean development without PostgreSQL setup
    - Use prod profile for full application features
 
-3. **Startup Time**: Application starts quickly (~3 seconds in dev, longer with database in prod)
+3. **UI Features by Endpoint**:
+   - **User Management:** All CRUD operations (create, read, update, delete users)
+   - **Document Management:** Full document lifecycle (create, read, update, delete, search)
+   - **Document Sharing:** Share documents with other users, revoke access, check permissions
+   - **Categories:** Create and list document categories
+   - **Audit & Logs:** View access logs, recent activity (7-day window), and access statistics
+   - All endpoints have try-catch error handling with user-friendly error messages
+
+4. **Startup Time**: Application starts quickly (~3 seconds in dev, longer with database in prod)

@@ -1,5 +1,6 @@
 package com.example.controller;
 
+import com.example.dto.UserDTO;
 import com.example.entity.User;
 import com.example.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,26 +32,26 @@ public class UserController {
     
     /**
      * Get all users
-     * @return list of all users
+     * @return list of all users as DTOs
      */
     @GetMapping
     @Operation(summary = "Get all users", description = "Retrieve a list of all users from the database")
-    public ResponseEntity<List<User>> getAllUsers() {
+    public ResponseEntity<List<UserDTO>> getAllUsers() {
         logger.info("GET /api/users - Retrieving all users");
-        List<User> users = userService.getAllUsers();
+        List<UserDTO> users = userService.getAllUsersAsDTO();
         return ResponseEntity.ok(users);
     }
     
     /**
      * Get user by ID
      * @param id the user ID
-     * @return the user if found
+     * @return the user DTO if found
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get user by ID", description = "Retrieve a specific user by their ID")
-    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         logger.info("GET /api/users/{} - Retrieving user", id);
-        Optional<User> user = userService.getUserById(id);
+        Optional<UserDTO> user = userService.getUserByIdAsDTO(id);
         return user.map(ResponseEntity::ok)
                    .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -58,13 +59,13 @@ public class UserController {
     /**
      * Get user by username
      * @param username the username
-     * @return the user if found
+     * @return the user DTO if found
      */
     @GetMapping("/search/username")
     @Operation(summary = "Get user by username", description = "Retrieve a user by their username")
-    public ResponseEntity<User> getUserByUsername(@RequestParam String username) {
+    public ResponseEntity<UserDTO> getUserByUsername(@RequestParam String username) {
         logger.info("GET /api/users/search/username?username={} - Retrieving user", username);
-        Optional<User> user = userService.getUserByUsername(username);
+        Optional<UserDTO> user = userService.getUserByUsernameAsDTO(username);
         return user.map(ResponseEntity::ok)
                    .orElseGet(() -> ResponseEntity.notFound().build());
     }
@@ -72,14 +73,14 @@ public class UserController {
     /**
      * Create a new user
      * @param user the user data
-     * @return the created user
+     * @return the created user DTO
      */
     @PostMapping
     @Operation(summary = "Create user", description = "Create a new user in the database")
-    public ResponseEntity<User> createUser(@RequestBody User user) {
+    public ResponseEntity<UserDTO> createUser(@RequestBody User user) {
         logger.info("POST /api/users - Creating new user: {}", user.getUsername());
         try {
-            User createdUser = userService.createUser(user);
+            UserDTO createdUser = userService.createUserAsDTO(user);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
         } catch (IllegalArgumentException e) {
             logger.error("Error creating user: {}", e.getMessage());
@@ -91,15 +92,15 @@ public class UserController {
      * Update an existing user
      * @param id the user ID
      * @param user the updated user data
-     * @return the updated user
+     * @return the updated user DTO
      */
     @PutMapping("/{id}")
     @Operation(summary = "Update user", description = "Update an existing user")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody User user) {
         logger.info("PUT /api/users/{} - Updating user", id);
         user.setId(id);
         try {
-            User updatedUser = userService.updateUser(user);
+            UserDTO updatedUser = userService.updateUserAsDTO(user);
             return ResponseEntity.ok(updatedUser);
         } catch (IllegalArgumentException e) {
             logger.error("Error updating user: {}", e.getMessage());

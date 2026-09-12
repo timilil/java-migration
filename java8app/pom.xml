@@ -27,7 +27,7 @@
         <liquibase.version>3.10.3</liquibase.version>
         <jackson.version>2.15.2</jackson.version>
         <junit.version>4.13.2</junit.version>
-        <mockito.version>1.10.19</mockito.version>
+        <mockito.version>3.12.4</mockito.version>
         <springdoc.openapi.version>1.7.0</springdoc.openapi.version>
         <jetty.version>9.4.52.v20230823</jetty.version>
         <httpclient.version>4.5.14</httpclient.version>
@@ -197,12 +197,12 @@
             <version>${c3p0.version}</version>
         </dependency>
 
-        <!-- H2 Database (for testing) -->
+        <!-- H2 Database (for testing and development) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>${h2.version}</version>
-            <scope>test</scope>
+            <scope>compile</scope>
         </dependency>
 
         <!-- Testing Dependencies -->

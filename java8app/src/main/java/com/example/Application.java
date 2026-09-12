@@ -2,6 +2,8 @@ package com.example;
 
 import com.example.config.SpringConfig;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.session.DefaultSessionIdManager;
+import org.eclipse.jetty.server.session.SessionHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.slf4j.Logger;
@@ -90,6 +92,13 @@ public class Application {
         // Create servlet context
         ServletContextHandler servletContext = new ServletContextHandler();
         servletContext.setContextPath("/");
+
+        // Add session management to support authentication
+        DefaultSessionIdManager idManager = new DefaultSessionIdManager(server);
+        server.setSessionIdManager(idManager);
+        SessionHandler sessionHandler = new SessionHandler();
+        sessionHandler.setSessionIdManager(idManager);
+        servletContext.setSessionHandler(sessionHandler);
 
         // Register DispatcherServlet with the Spring context.
         // IMPORTANT: The context must NOT be refreshed yet at this point. Beans

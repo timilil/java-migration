@@ -23,18 +23,19 @@ import java.beans.PropertyVetoException;
 
 /**
  * Spring Configuration - Manual bean definitions without Spring Boot auto-configuration
- * Database beans (DataSource, EntityManagerFactory, TransactionManager) only created for 'prod' profile
+ * Database beans (DataSource, EntityManagerFactory, TransactionManager) created for 'prod' and 'dev' profiles
  */
 @Configuration
 @EnableTransactionManagement
+@EnableJpaRepositories(basePackages = "com.example.repository")
 public class SpringConfig {
 
     /**
      * Create C3P0 connection pool DataSource
-     * Only active for 'prod' profile
+     * Active for 'prod' profile with PostgreSQL, or 'dev' profile with H2
      */
     @Bean
-    @Profile("prod")
+    @Profile({"prod", "dev"})
     public DataSource dataSource(Environment env) throws PropertyVetoException {
         String url = env.getProperty("spring.datasource.url");
         String username = env.getProperty("spring.datasource.username");
@@ -57,14 +58,21 @@ public class SpringConfig {
 
     /**
      * Create Liquibase bean for database migrations
-     * Only active for 'prod' profile
+     * Active for 'prod' and 'dev' profiles
      */
     @Bean
-    @Profile("prod")
+    @Profile({"prod", "dev"})
     public SpringLiquibase liquibase(DataSource dataSource, Environment env) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.xml");
+        
+        // Allow clearChecksums to be set via property for development environments
+        // Usage: --spring.liquibase.clear-checksums=true
+        String clearChecksums = env.getProperty("spring.liquibase.clear-checksums");
+        if ("true".equalsIgnoreCase(clearChecksums)) {
+            liquibase.setClearCheckSums(true);
+        }
         
         String contexts = env.getProperty("spring.liquibase.contexts");
         if (contexts != null && !contexts.isEmpty()) {
@@ -76,11 +84,11 @@ public class SpringConfig {
 
     /**
      * Create EntityManagerFactory
-     * Only for 'prod' profile
+     * For 'prod' and 'dev' profiles
      * Depends on Liquibase so schema migrations run before Hibernate validates the schema
      */
     @Bean
-    @Profile("prod")
+    @Profile({"prod", "dev"})
     @DependsOn("liquibase")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             DataSource dataSource, Environment env) {
@@ -111,10 +119,10 @@ public class SpringConfig {
 
     /**
      * Create Transaction Manager
-     * Only for 'prod' profile
+     * For 'prod' and 'dev' profiles
      */
     @Bean
-    @Profile("prod")
+    @Profile({"prod", "dev"})
     public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
         return new JpaTransactionManager(emf);
     }
