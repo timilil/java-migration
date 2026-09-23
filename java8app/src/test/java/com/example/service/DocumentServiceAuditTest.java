@@ -122,6 +122,17 @@ public class DocumentServiceAuditTest {
         assertEquals(0, result.size());
         verify(documentAccessLogRepository, times(1)).findByDocumentId(1L);
     }
+
+    @Test
+    public void testGetLatestAccessLogById() {
+        DocumentAccessLog latest = new DocumentAccessLog(1L, 1L, "VIEW");
+        latest.setId(2L);
+        when(documentAccessLogRepository.findFirstByOrderByIdDesc()).thenReturn(latest);
+
+        assertTrue(documentService.getLatestAccessLogById().isPresent());
+        assertEquals(Long.valueOf(2L), documentService.getLatestAccessLogById().get().getId());
+        verify(documentAccessLogRepository, times(2)).findFirstByOrderByIdDesc();
+    }
     
     @Test
     public void testGetRecentAccessLogs() {

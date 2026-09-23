@@ -19,7 +19,8 @@ public class DocumentAccessLog implements Serializable {
     private static final long serialVersionUID = 1L;
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name = "document_access_log_generator", sequenceName = "document_access_log_seq", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.AUTO, generator = "document_access_log_generator")
     @Column(name = "id")
     private Long id;
     

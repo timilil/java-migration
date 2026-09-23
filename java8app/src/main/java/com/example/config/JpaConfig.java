@@ -6,11 +6,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * JPA Configuration - Only enabled for 'prod' profile
+ * JPA Configuration - Enabled for database-backed profiles
  * Enables repositories and transaction management
  */
 @Configuration
-@Profile("prod")
+@Profile({"dev", "prod", "integration-test"})
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "com.example.repository")
 public class JpaConfig {

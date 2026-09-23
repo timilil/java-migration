@@ -5,6 +5,7 @@ import com.example.entity.Document;
 import com.example.entity.DocumentAccessLog;
 import com.example.entity.DocumentCategory;
 import com.example.entity.DocumentShare;
+import com.example.entity.SharePermission;
 import com.example.repository.DocumentAccessLogRepository;
 import com.example.repository.DocumentCategoryRepository;
 import com.example.repository.DocumentRepository;
@@ -197,7 +198,7 @@ public class DocumentService {
         DocumentShare share = existingShareOpt.orElseGet(
                 () -> new DocumentShare(documentId, ownerId, sharedWithUserId, permissionType));
         share.setSharedByUserId(ownerId);
-        share.setPermissionType(permissionType);
+        share.setPermissionType(SharePermission.valueOf(permissionType));
         share.setIsActive(true);
         documentShareRepository.save(share);
         
@@ -329,6 +330,11 @@ public class DocumentService {
     public List<DocumentAccessLog> getDocumentAccessLog(Long documentId) {
         logger.info("Fetching access log for document {}", documentId);
         return documentAccessLogRepository.findByDocumentId(documentId);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<DocumentAccessLog> getLatestAccessLogById() {
+        return Optional.ofNullable(documentAccessLogRepository.findFirstByOrderByIdDesc());
     }
     
     /**

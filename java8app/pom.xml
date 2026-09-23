@@ -22,7 +22,7 @@
         <spring.framework.version>5.2.20.RELEASE</spring.framework.version>
         <spring.security.version>5.3.10.RELEASE</spring.security.version>
         <spring.data.jpa.version>2.2.13.RELEASE</spring.data.jpa.version>
-        <hibernate.version>5.6.10.Final</hibernate.version>
+        <hibernate.version>5.4.33.Final</hibernate.version>
         <postgresql.version>42.6.0</postgresql.version>
         <liquibase.version>3.10.3</liquibase.version>
         <jackson.version>2.15.2</jackson.version>
@@ -39,7 +39,6 @@
         <maven.surefire.plugin.version>3.0.0</maven.surefire.plugin.version>
         <maven.failsafe.plugin.version>3.0.0</maven.failsafe.plugin.version>
         <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
-        <build.helper.plugin.version>3.4.0</build.helper.plugin.version>
         <servlet.api.version>3.1.0</servlet.api.version>
         <slf4j.version>1.7.36</slf4j.version>
         <logback.version>1.2.12</logback.version>
@@ -198,12 +197,12 @@
             <version>${c3p0.version}</version>
         </dependency>
 
-        <!-- H2 Database (for testing and development) -->
+        <!-- H2 Database (for testing) -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <version>${h2.version}</version>
-            <scope>compile</scope>
+            <scope>test</scope>
         </dependency>
 
         <!-- Testing Dependencies -->
@@ -263,31 +262,22 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- Add integration-test source/resources as additional test directories -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>${build.helper.plugin.version}</version>
+                <version>3.5.0</version>
                 <executions>
                     <execution>
-                        <id>add-integration-test-source</id>
+                        <id>add-integration-test-sources</id>
                         <phase>generate-test-sources</phase>
                         <goals>
                             <goal>add-test-source</goal>
+                            <goal>add-test-resource</goal>
                         </goals>
                         <configuration>
                             <sources>
                                 <source>src/integration-test/java</source>
                             </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>add-integration-test-resource</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>add-test-resource</goal>
-                        </goals>
-                        <configuration>
                             <resources>
                                 <resource>
                                     <directory>src/integration-test/resources</directory>

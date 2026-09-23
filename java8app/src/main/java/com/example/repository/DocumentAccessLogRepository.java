@@ -14,6 +14,8 @@ import java.util.List;
  */
 @Repository
 public interface DocumentAccessLogRepository extends JpaRepository<DocumentAccessLog, Long> {
+
+    DocumentAccessLog findFirstByOrderByIdDesc();
     
     /**
      * Find all access logs for a document

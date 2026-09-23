@@ -30,8 +30,9 @@ public class DocumentShare implements Serializable {
     @Column(name = "shared_with_user_id", nullable = false)
     private Long sharedWithUserId;
     
+    @Enumerated(EnumType.STRING)
     @Column(name = "permission_type", nullable = false, length = 20)
-    private String permissionType; // VIEW, EDIT, ADMIN
+    private SharePermission permissionType;
     
     @Column(name = "shared_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime sharedAt;
@@ -46,7 +47,7 @@ public class DocumentShare implements Serializable {
     public DocumentShare() {
         this.sharedAt = LocalDateTime.now();
         this.isActive = true;
-        this.permissionType = "VIEW";
+        this.permissionType = SharePermission.VIEW;
     }
     
     public DocumentShare(Long documentId, Long sharedByUserId, Long sharedWithUserId, String permissionType) {
@@ -54,7 +55,7 @@ public class DocumentShare implements Serializable {
         this.documentId = documentId;
         this.sharedByUserId = sharedByUserId;
         this.sharedWithUserId = sharedWithUserId;
-        this.permissionType = permissionType;
+        this.permissionType = SharePermission.valueOf(permissionType);
     }
     
     // Getters and Setters
@@ -70,8 +71,8 @@ public class DocumentShare implements Serializable {
     public Long getSharedWithUserId() { return sharedWithUserId; }
     public void setSharedWithUserId(Long sharedWithUserId) { this.sharedWithUserId = sharedWithUserId; }
     
-    public String getPermissionType() { return permissionType; }
-    public void setPermissionType(String permissionType) { this.permissionType = permissionType; }
+    public String getPermissionType() { return permissionType.name(); }
+    public void setPermissionType(SharePermission permissionType) { this.permissionType = permissionType; }
     
     public LocalDateTime getSharedAt() { return sharedAt; }
     public void setSharedAt(LocalDateTime sharedAt) { this.sharedAt = sharedAt; }

@@ -1,22 +1,17 @@
 package com.example.integration;
 
-import com.example.controller.DocumentController;
-import com.example.repository.*;
-import com.example.service.DocumentService;
-import com.example.service.UserService;
-import org.hibernate.SessionFactory;
-import org.hibernate.jpa.HibernateEntityManagerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.orm.hibernate5.HibernateTransactionManager;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import liquibase.integration.spring.SpringLiquibase;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
@@ -33,6 +28,7 @@ import java.util.Properties;
 @EnableJpaRepositories(basePackages = "com.example.repository")
 @ComponentScan(basePackages = {"com.example.service", "com.example.controller"})
 @Profile("integration-test")
+@Import(com.example.config.AppConfig.class)
 public class IntegrationTestConfig {
     
     @Bean
@@ -44,8 +40,18 @@ public class IntegrationTestConfig {
         dataSource.setPassword("");
         return dataSource;
     }
+
+    @Bean
+    public SpringLiquibase liquibase(DataSource dataSource) {
+        SpringLiquibase liquibase = new SpringLiquibase();
+        liquibase.setDataSource(dataSource);
+        liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.xml");
+        liquibase.setContexts("integration-test");
+        return liquibase;
+    }
     
     @Bean(name = "entityManagerFactory")
+    @DependsOn("liquibase")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
@@ -56,14 +62,14 @@ public class IntegrationTestConfig {
     }
     
     @Bean
-    public PlatformTransactionManager transactionManager(@Autowired EntityManagerFactory emf) {
+    public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
         return new JpaTransactionManager(emf);
     }
     
     private Properties hibernateProperties() {
         Properties properties = new Properties();
-        properties.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
-        properties.put("hibernate.hbm2ddl.auto", "create");
+        properties.put("hibernate.dialect", "com.example.config.H2CompatibleDialect");
+        properties.put("hibernate.hbm2ddl.auto", "validate");
         properties.put("hibernate.show_sql", "false");
         properties.put("hibernate.format_sql", "true");
         return properties;

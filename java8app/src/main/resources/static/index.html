@@ -324,8 +324,15 @@
 <body>
     <div class="container">
         <header>
-            <h1>📚 Document Management System</h1>
-            <p>Comprehensive UI demonstrating all API endpoints | Profiles: dev (status only) | prod (full features)</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h1>📚 Document Management System</h1>
+                    <p>Comprehensive UI demonstrating all API endpoints | Profiles: dev (status only) | prod (full features)</p>
+                </div>
+                <form method="post" action="/logout" style="margin: 0;">
+                    <button type="submit" class="danger" style="flex: none; min-width: 100px;">🚪 Logout</button>
+                </form>
+            </div>
         </header>
 
         <div class="dashboard">
