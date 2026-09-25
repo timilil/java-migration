@@ -5,36 +5,19 @@ A complete example backend Spring application using Java 17 with Spring Framewor
 ## Project Structure
 
 ```
-java17app/
-├── pom.xml                                    # Maven configuration with all property-based versioning
-├── src/
-│   ├── main/
-│   │   ├── java/com/example/
-│   │   │   ├── Application.java              # Main entry point with manual Jetty + Spring init
-│   │   │   ├── config/                       # Spring configuration classes
-│   │   │   │   ├── SpringConfig.java         # Core Spring beans (datasource with HikariCP, liquibase for prod)
-│   │   │   │   ├── WebConfig.java            # Web MVC configuration
-│   │   │   │   ├── OpenApiConfig.java        # SpringDoc OpenAPI/Swagger configuration
-│   │   │   │   └── JpaConfig.java            # JPA repositories (prod profile only)
-│   │   │   ├── controller/                   # REST controllers
-│   │   │   ├── entity/                       # JPA entities
-│   │   │   ├── repository/                   # Data access repositories (prod profile only)
-│   │   │   └── service/                      # Business logic services
-│   │   └── resources/
-│   │       ├── application.properties         # Default properties (dev profile)
-│   │       ├── application-dev.properties     # Development profile (Jetty on 8080, no DB)
-│   │       ├── application-prod.properties    # Production profile (PostgreSQL with Liquibase)
-│   │       ├── application-test.properties    # Test profile
-│   │       ├── application-integration-test.properties  # Integration test profile
-│   │       ├── logback.xml                    # Logback configuration
-│   │       └── db/changelog/                 # Liquibase database migrations (prod only)
-│   ├── test/
-│   │   └── java/com/example/service/
-│   │       └── UserServiceTest.java          # Unit tests (JUnit 5)
-│   └── integration-test/
-│       └── java/com/example/integration/
-│           └── UserRepositoryIntegrationTest.java  # Integration tests
-└── README.md
+src/
+├── main/
+│   ├── java/com/example/
+│   │   ├── Application.java       # Manual Jetty and Spring bootstrap
+│   │   ├── config/                # Spring, JPA, security, web, and OpenAPI configuration
+│   │   ├── controller/            # MVC and REST controllers
+│   │   ├── dto/                   # API data transfer objects
+│   │   ├── entity/                # JPA entities
+│   │   ├── repository/            # Spring Data repositories
+│   │   └── service/               # Business services
+│   └── resources/                 # Properties, Liquibase changelogs, static UI, logging
+├── test/java/                     # Unit and service tests
+└── integration-test/              # H2-backed integration tests
 ```
 
 ## Technology Stack
@@ -43,19 +26,19 @@ java17app/
 - **Java 17** (LTS)
 - **Spring Framework 5.3.31** (manual initialization, no Spring Boot)
 - **Spring Security 5.7.13** - Authentication & authorization  
-- **Spring Data JPA 2.7.17** (prod profile only)
-- **Hibernate 5.6.15.Final** (prod profile only)
+- **Spring Data JPA 2.7.17** (database-backed profiles)
+- **Hibernate 5.6.15.Final** (database-backed profiles)
 
 ### Web & Servlet
 - **Jetty 10.0.20** - Embedded servlet container (manual init)
-- **Jakarta Servlet API 6.0.0** - Servlet specification (Jakarta namespace)
+- **Jakarta Servlet API 6.0.0** - Declared in the POM; see the namespace compatibility note below
 - **SpringDoc OpenAPI 1.8.0** - API documentation & Swagger UI
 
 ### Database & Persistence
-- **PostgreSQL 42.7.3 Driver** - Database driver (prod only)
-- **Liquibase 4.25.1** - Database schema migrations (prod only)
-- **HikariCP 5.1.0** - Connection pooling (prod only, replaces C3P0)
-- **H2 2.2.224** - In-memory database (test only)
+- **PostgreSQL 42.7.3 Driver** - Database driver (`dev` and `prod`)
+- **Liquibase 4.25.1** - Database schema migrations (database-backed profiles)
+- **HikariCP 5.1.0** - Connection pooling (`dev` and `prod`; integration tests use `DriverManagerDataSource`)
+- **H2 2.2.224** - In-memory integration-test database
 
 ### Serialization & HTTP
 - **Jackson 2.18.0** - JSON processing
@@ -74,9 +57,9 @@ java17app/
 
 ### Prerequisites
 
-- Java 17 (or higher)
+- Java 17
 - Maven 3.6+
-- PostgreSQL 9.6+ (for production profile only)
+- PostgreSQL (for the `dev` and `prod` runtime profiles; integration tests use H2)
 
 ### Compile the Project
 
@@ -84,8 +67,8 @@ java17app/
 # Standard compilation (no database required)
 mvn clean compile
 
-# Full build with tests
-mvn clean package
+# Unit tests plus integration tests (see the Failsafe note below)
+mvn clean verify -Dfailsafe.useModulePath=false
 
 # Build without running tests
 mvn clean package -DskipTests
@@ -97,8 +80,8 @@ mvn clean package -DskipTests
 # Run all unit tests
 mvn test
 
-# Run integration tests
-mvn verify
+# Run unit and integration tests
+mvn verify -Dfailsafe.useModulePath=false
 
 # Run specific test
 mvn test -Dtest=UserServiceTest
@@ -106,7 +89,7 @@ mvn test -Dtest=UserServiceTest
 
 ## Running the Application
 
-### Development Profile (DEFAULT - No Database Required)
+### Development Profile (default; PostgreSQL required)
 
 ```bash
 # Build and run
@@ -119,13 +102,12 @@ java -jar target/java17-spring-app-2.0.0.jar --spring.profiles.active=dev
 
 **Dev Profile Features:**
 - Jetty server listens on `http://localhost:8080`
-- No database required (JPA repositories disabled)
+- PostgreSQL connection at `jdbc:postgresql://localhost:5432/java8app_dev`
+- HikariCP, Liquibase, EntityManagerFactory, transaction manager, and JPA repositories are enabled
+- `UserController`, `UserService`, and `DocumentController` are production-profile-only, so their endpoints are not registered in `dev`
 - Spring component scanning discovers all @Component, @Service, @Controller beans
-- ✅ Application starts successfully
-- ✅ Server responds on localhost:8080
-- Visit `http://localhost:8080/` for a status page confirming the app is running and showing the active profile
-- **Swagger UI**: `http://localhost:8080/swagger-ui.html` (shows API documentation with @Tag annotations)
-- **API Docs**: `http://localhost:8080/v3/api-docs` (OpenAPI 3.0.1 JSON specification)
+- Unauthenticated requests to `/` are redirected to `/login`
+- SpringDoc is manually wired because the application does not use Spring Boot; its configuration-properties binding is not enabled
 
 ### Production Profile (PostgreSQL Required)
 
@@ -139,85 +121,79 @@ java -jar target/java17-spring-app-2.0.0.jar --spring.profiles.active=prod
 - JPA repositories enabled
 - EntityManagerFactory created
 - TransactionManager configured
-- Requires: `postgresql://localhost:5432/java17app_prod`
+- Requires: `jdbc:postgresql://localhost:5432/java8app_prod`
 - Database credentials configured in `application-prod.properties`
 - **REST API**: Full `/api/users` endpoints (GET, POST, PUT, DELETE)
-- **Swagger UI**: Available at `http://localhost:8080/swagger-ui.html`
-- **API Docs**: `http://localhost:8080/v3/api-docs`
+- Swagger UI/API-doc behavior follows the manually imported SpringDoc defaults; profile-specific `springdoc.*.enabled` properties are not bound by this bootstrap
 
 ### Test Profiles
 
 ```bash
-# Integration tests use H2 in-memory database
-mvn verify
+# Integration tests use an H2 in-memory database
+mvn clean verify -Dfailsafe.useModulePath=false
 ```
 
 ## Profiles
 
-The application supports 4 configuration profiles:
+The application has four Maven profiles (currently empty) and four Spring profile property files. The runtime Spring profile is selected from `--spring.profiles.active=...`, the `spring.profiles.active` system property, the `SPRING_PROFILES_ACTIVE` environment variable, or defaults to `dev`. Maven `-P...` does not select the runtime profile.
 
-| Profile | Database | Services/Controller | Repos | EntityMgr | Liquibase | Use Case |
-|---------|----------|-------------------|-------|-----------|-----------|----------|
-| **dev** (default) | None | ❌ | ❌ | ❌ | ❌ | Local development, no database dependencies |
-| **prod** | PostgreSQL | ✅ | ✅ | ✅ | ✅ | Production deployment with full DB features |
-| **test** | PostgreSQL | ✅ | ✅ | ✅ | ❌ | Test environment with real database |
-| **integration-test** | H2 (mem) | ✅ | ✅ | ✅ | ❌ | Integration testing with H2 database |
+| Spring profile | Database configuration | Database/JPA beans active | Notes |
+|---------------|------------------------|--------------------------|-------|
+| **dev** (default) | PostgreSQL (`java8app_dev`) | Yes | HikariCP and Liquibase are enabled; user/document management controllers are not active |
+| **prod** | PostgreSQL (`java8app_prod`) | Yes | HikariCP, Liquibase, JPA, and production-profile controllers/services |
+| **test** | PostgreSQL settings exist in its properties file | No matching database/JPA `@Profile` configuration | Not the profile used by the Maven unit tests |
+| **integration-test** | H2 in-memory | Yes | Used by the integration-test Spring context |
 
 ## Configuration Files
 
+The property files contain legacy `java8-spring-app` names and `java8app_*` database names despite this being the Java 17 project. The application loads `application.properties` and then the selected `application-{profile}.properties` file itself; this is not Spring Boot property auto-configuration.
+
 ### application.properties
 ```properties
-spring.application.name=java17-spring-app
-server.port=8080
+spring.application.name=java8-spring-app
+spring.profiles.default=dev
 logging.level.root=INFO
 ```
 
 ### application-dev.properties
 ```properties
-# No database configuration
-# Repositories and EntityManager NOT created
+# PostgreSQL configuration is present and consumed by SpringConfig
+spring.datasource.url=jdbc:postgresql://localhost:5432/java8app_dev
+spring.datasource.username=dev_user
+spring.datasource.password=dev_password
+spring.datasource.driver-class-name=org.postgresql.Driver
+spring.liquibase.contexts=application
 logging.level.com.example=DEBUG
 logging.level.org.springframework.web=DEBUG
-# Swagger UI configuration
-springdoc.swagger-ui.path=/swagger-ui.html
-springdoc.api-docs.path=/v3/api-docs
-springdoc.swagger-ui.enabled=true
-springdoc.api-docs.enabled=true
 ```
 
 ### application-prod.properties
 ```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/java17app_prod
+spring.datasource.url=jdbc:postgresql://localhost:5432/java8app_prod
 spring.datasource.username=prod_user
 spring.datasource.password=prod_password
 spring.jpa.hibernate.ddl-auto=validate
 spring.liquibase.enabled=true
-spring.liquibase.contexts=prod
+spring.liquibase.contexts=application
 # DataSource, EntityManagerFactory, TransactionManager created
 # JPA Repositories enabled
 # HikariCP connection pooling configured
-# Swagger UI disabled, API docs enabled only
-springdoc.swagger-ui.enabled=false
-springdoc.api-docs.enabled=true
 ```
 
 ## Architecture
 
 ###  Initialization Flow
 
-1. `Application.main()` detects active profile via `--spring.profiles.active=X` or environment
+1. `Application.main()` detects the active profile from a command-line argument, system property, or environment variable; it defaults to `dev`
 2. Calls `createAndStartJettyServer(profile)`
 3. Creates `AnnotationConfigWebApplicationContext` with active profile set
 4. Loads `application.properties` and `application-{profile}.properties`
 5. Registers configuration classes:
-   - `SpringConfig` (always registered, contains datasource beans)
-   - `WebConfig` (enables @EnableWebMvc for JSON converters)
-   - `OpenApiConfig` (manually wires SpringDoc auto-configuration classes)
-   - `JpaConfig` (only if prod profile)
-   - Other Spring components
+   - `SpringConfig`, `WebConfig`, and `OpenApiConfig`
+   - Other `com.example` components, including profile-conditional `JpaConfig`
 6. Spring context is refreshed:
-   - For **dev**: Creates basic Spring beans, NO database beans
-   - For **prod**: Creates database beans (DataSource, EntityManagerFactory, Liquibase)
+   - For **dev** and **prod**: Creates PostgreSQL/HikariCP, Liquibase, JPA, and transaction beans
+   - For **integration-test**: Creates H2, Liquibase, JPA, and transaction beans
 7. Creates Jetty server with servlet context
 8. Registers `DispatcherServlet` mapping to `/*`
 9. Starts Jetty server on configured port
@@ -225,22 +201,21 @@ springdoc.api-docs.enabled=true
 
 ### Spring Configuration
 
-**SpringConfig.java** (always loaded):
-- DataSource bean (HikariCP) - prod only
-- Liquibase bean - prod only  
-- TransactionManager setup
+**SpringConfig.java** (always registered; beans are profile-conditional):
+- HikariCP DataSource for `dev` and `prod`; `DriverManagerDataSource` for `integration-test`
+- Liquibase and EntityManagerFactory for `dev`, `prod`, and `integration-test`
+- EntityManagerFactory depends on Liquibase so schema migrations run first
+- JPA transaction manager for database-backed profiles
 
 **WebConfig.java** (always loaded):
 - Enables `@EnableWebMvc` to auto-configure Spring MVC converters and handlers
 
 **OpenApiConfig.java** (always loaded):
-- Manually imports SpringDoc OpenAPI auto-configuration classes
-- Enables Swagger UI and OpenAPI JSON generation
+- Manually imports SpringDoc configuration classes because Spring Boot auto-configuration is not running
+- Does not enable Spring configuration-properties binding for SpringDoc; profile-specific property toggles should not be assumed effective
 
-**JpaConfig.java** (prod profile only):
-- Enables `@EnableJpaRepositories` for prod profile
-- EntityManagerFactory bean
-- Repository auto-scanning
+**JpaConfig.java** (`dev`, `prod`, and `integration-test` profiles):
+- Enables `@EnableJpaRepositories` for database-backed profiles
 
 **Application.java**:
 - Manual Jetty initialization
@@ -249,8 +224,7 @@ springdoc.api-docs.enabled=true
 
 ## Dependency Management
 
-**All versions defined as properties in pom.xml:**
-- `java.version=17`
+**Dependency versions are defined as properties in pom.xml; the Java compiler level is configured directly as 17:**
 - `spring.framework.version=5.3.31`
 - `spring.security.version=5.7.13`
 - `spring.data.jpa.version=2.7.17`
@@ -266,73 +240,25 @@ springdoc.api-docs.enabled=true
 - `h2.version=2.2.224`
 - `slf4j.version=2.0.13`
 - `logback.version=1.3.14`
+- `httpclient.version=5.4`
+- `servlet.api.version=6.0.0`
 
-**Zero hardcoded versions in dependencies** - all use `${property}` references.
+Dependency versions use `${property}` references. The POM does not define a `java.version` property.
 
 ## Migration Notes (from Java 8 to Java 17)
+The current POM targets Java 17 and upgrades several libraries compared with the Java 8 project, including Spring Framework 5.2 → 5.3, Spring Security 5.3 → 5.7, Spring Data JPA 2.2 → 2.7, Hibernate 5.4 → 5.6, Jetty 9 → 10, Liquibase 3 → 4, HttpClient 4 → 5, JUnit 4 → 5, and Mockito 1 → 5. HikariCP is used instead of C3P0 in the Java 17 project.
 
-### Key Changes
+**Important namespace compatibility note:** this is not a completed `javax` → `jakarta` migration. The POM declares `jakarta.servlet-api:6.0.0`, but Jetty 10 and application sources use the `javax.servlet` namespace; application sources also use `javax.persistence` with Hibernate 5.6. The declared Servlet API dependency and the APIs used by the application do not match. This README describes the current state; it does not resolve the dependency mismatch.
 
-1. **Java Version**: 1.8 → 17
-   - All Java 9+ features now available (var, records, sealed classes, pattern matching, etc.)
-   - Module system (java.base, java.naming, etc.) available but not required for this app
-
-2. **Servlet API**: javax.servlet → jakarta.servlet (6.0.0)
-   - Jetty 10+ requires Jakarta namespace
-   - Note: Hibernate 5.6 still uses javax.persistence (not jakarta.persistence)
-
-3. **Spring Framework**: 5.2 → 5.3
-   - Better Java 17+ support
-   - Improved null-safety annotations
-   - Better web MVC enhancements
-
-4. **Database Connection Pooling**: C3P0 0.9.5.x → HikariCP 5.1.0
-   - HikariCP is modern, actively maintained, and performs better
-   - Configuration migrated in SpringConfig.java
-   - Set `@DependsOn("liquibase")` on EntityManagerFactory ensures correct initialization order
-
-5. **Testing**: JUnit 4 → JUnit 5 (Jupiter)
-   - Import changes: `org.junit.*` → `org.junit.jupiter.api.*`
-   - Annotation changes: `@Before` → `@BeforeEach`, `@Test(expected=...)` → `assertThrows(...)`
-   - Mockito integration: `@RunWith(SpringRunner.class)` → `@ExtendWith(MockitoExtension.class)`
-   - Added `mockito-junit-jupiter` dependency for full JUnit 5 support
-
-6. **Logging**: SLF4J 1.7 + Logback 1.2 → SLF4J 2.0 + Logback 1.3
-   - SLF4J 2.0 requires Java 8+ and offers better performance
-   - Logback 1.3 has better Java 17+ support
-   - Configuration files updated (logback.xml uses modern syntax)
-
-7. **Mockito**: 1.10.x → 5.7.0
-   - Much stricter testing rules (no unnecessary stubbings)
-   - Better Java 17+ support via ByteBuddy
-   - Configuration `MockitoAnnotations.initMocks(this)` → `@ExtendWith(MockitoExtension.class)` on class
-
-8. **SpringDoc OpenAPI**: 1.7.0 → 1.8.0
-   - Better support for Swagger UI with newer Spring versions
-   - OpenAPI Config now manually wired via OpenApiConfig.java
-   - Swagger UI and API docs fully functional in both dev and prod
+The application has no `module-info.java` and is compiled and run on the classpath. Targeting Java 17 makes newer language features available, but does not mean they have all been adopted in the source.
 
 ## Known Issues & Notes
+1. **Dev profile requires PostgreSQL.** It enables database beans, while the user and document management controllers/services are limited to `prod` (the document service also participates in integration tests). Use `prod` for the production-profile REST APIs.
 
-1. **404 on user endpoints in dev profile**: This is expected. Dev profile intentionally disables `UserController`/`UserService` (no database), so there are no HTTP routes registered. The server itself starts and runs fine — check the startup logs for `✅ Jetty server started successfully`. Use `--spring.profiles.active=prod` to enable the `/api/users` endpoints.
+2. **Integration-test database compatibility:** `H2CompatibleDialect` customizes Hibernate 5.6's H2 identity-column SQL for H2 2.x. The integration-test Spring context uses this dialect with an in-memory H2 database.
 
-2. **Dev Profile Architecture**: 
-   - No database dependencies (UserService and UserController disabled via @Profile("prod"))
-   - JPA repositories NOT enabled (only in prod/test/integration-test profiles)
-   - EntityManagerFactory NOT created
-   - Allows clean development without PostgreSQL setup
-   - Use prod profile for full application features
+3. **Failsafe module path:** on the current Java 17/Maven setup, plain `mvn verify` fails to start the integration-test fork because HikariCP is detected twice on the module path. Use `mvn verify -Dfailsafe.useModulePath=false` to run the integration suite without changing the POM.
 
-3. **Startup Time**: Application starts quickly (~3-4 seconds in dev, longer with database in prod)
+4. **Demo security only:** `SecurityConfig` permits unauthenticated `/api/**` requests, and login compares the supplied password directly with the stored value. Do not deploy this example as-is or use real credentials.
 
-4. **Java 17 Module System**: Not explicitly configured for this application
-   - Application runs in classpath mode
-   - No module-info.java file required
-   - All libraries loaded via classpath
-
-5. **HikariCP Configuration**: Replaces C3P0
-   - Maximum pool size: 10
-   - Minimum idle: 5
-   - Connection timeout: 30 seconds
-   - Max lifetime: 30 minutes
-   - Idle timeout: 10 minutes
+5. **Servlet dependency mismatch:** see the namespace compatibility note above before treating the declared Jakarta Servlet API dependency as a completed migration.

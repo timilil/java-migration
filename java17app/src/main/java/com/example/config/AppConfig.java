@@ -3,9 +3,10 @@ package com.example.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
-import org.apache.hc.client5.http.classic.HttpClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
 
 /**
  * Application Configuration - Spring beans and configuration
@@ -27,12 +28,18 @@ public class AppConfig {
      * @return HttpClient instance
      */
     @Bean
-    public HttpClient httpClient() {
-        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
-        connManager.setMaxTotal(100);
-        connManager.setDefaultMaxPerRoute(10);
-        return HttpClients.custom()
-                .setConnectionManager(connManager)
+    public CloseableHttpClient httpClient() {
+        var connectionManager = PoolingHttpClientConnectionManagerBuilder.create()
+                .setMaxConnTotal(100)
+                .setMaxConnPerRoute(10)
                 .build();
+        return HttpClients.custom()
+            .setConnectionManager(connectionManager)
+            .build();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }

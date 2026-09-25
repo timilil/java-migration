@@ -87,8 +87,9 @@ public class Application {
         logger.info("Creating Jetty server on port: {}", port);
         Server server = new Server(port);
 
-        // Create servlet context
-        ServletContextHandler servletContext = new ServletContextHandler();
+        // Create servlet context (SESSIONS flag installs a SessionHandler so
+        // request.getSession() works, e.g. for LoginController/StatusController)
+        ServletContextHandler servletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletContext.setContextPath("/");
 
         // Register DispatcherServlet with the Spring context.

@@ -38,118 +38,118 @@ public class UserServiceTest {
         testUser.setId(1L);
         testUser.setFullName("Test User");
     }
-    
+
     @Test
     public void testGetAllUsers() {
         // Arrange
         List<User> users = Arrays.asList(testUser);
         when(userRepository.findAll()).thenReturn(users);
-        
+
         // Act
         List<User> result = userService.getAllUsers();
-        
+
         // Assert
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("testuser", result.get(0).getUsername());
         verify(userRepository, times(1)).findAll();
     }
-    
+
     @Test
     public void testGetUserById() {
         // Arrange
         when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        
+
         // Act
         Optional<User> result = userService.getUserById(1L);
-        
+
         // Assert
         assertTrue(result.isPresent());
         assertEquals("testuser", result.get().getUsername());
         verify(userRepository, times(1)).findById(1L);
     }
-    
+
     @Test
     public void testGetUserByUsername() {
         // Arrange
         when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-        
+
         // Act
         Optional<User> result = userService.getUserByUsername("testuser");
-        
+
         // Assert
         assertTrue(result.isPresent());
         assertEquals("test@example.com", result.get().getEmail());
         verify(userRepository, times(1)).findByUsername("testuser");
     }
-    
+
     @Test
     public void testCreateUser() {
         // Arrange
         User newUser = new User("newuser", "new@example.com", "password456");
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.save(newUser)).thenReturn(newUser);
-        
+
         // Act
         User result = userService.createUser(newUser);
-        
+
         // Assert
         assertNotNull(result);
         assertEquals("newuser", result.getUsername());
         verify(userRepository, times(1)).existsByUsername("newuser");
         verify(userRepository, times(1)).save(newUser);
     }
-    
+
     @Test
     public void testCreateUserWithDuplicateUsername() {
         // Arrange
         User newUser = new User("testuser", "new@example.com", "password456");
         when(userRepository.existsByUsername("testuser")).thenReturn(true);
-        
+
         // Act & Assert - should throw exception
         assertThrows(IllegalArgumentException.class, () -> {
             userService.createUser(newUser);
         });
     }
-    
+
     @Test
     public void testUpdateUser() {
         // Arrange
         testUser.setFullName("Updated User");
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
         when(userRepository.save(testUser)).thenReturn(testUser);
-        
+
         // Act
         User result = userService.updateUser(testUser);
-        
+
         // Assert
         assertNotNull(result);
         assertEquals("Updated User", result.getFullName());
-        verify(userRepository, times(1)).existsById(1L);
+        verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).save(testUser);
     }
-    
+
     @Test
     public void testUpdateNonExistentUser() {
         // Arrange
         testUser.setId(999L);
-        when(userRepository.existsById(999L)).thenReturn(false);
-        
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
         // Act & Assert - should throw exception
         assertThrows(IllegalArgumentException.class, () -> {
             userService.updateUser(testUser);
         });
     }
-    
+
     @Test
     public void testDeleteUser() {
         // Arrange
         Long userId = 1L;
         doNothing().when(userRepository).deleteById(userId);
-        
+
         // Act
         userService.deleteUser(userId);
-        
+
         // Assert
         verify(userRepository, times(1)).deleteById(userId);
     }
