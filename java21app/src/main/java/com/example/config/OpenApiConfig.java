@@ -14,6 +14,19 @@ import io.swagger.v3.oas.models.info.License;
  * Defines OpenAPI beans manually for use with manual Jetty + Spring Framework setup.
  */
 @Configuration
+/*TODO
+@Import({
+        SpringDocConfiguration.class,
+        SpringDocConfigProperties.class,
+        SwaggerUiConfigProperties.class,
+        SwaggerUiConfigParameters.class,
+        SwaggerUiOAuthProperties.class,
+        SpringDocWebMvcConfiguration.class,
+        MultipleOpenApiSupportConfiguration.class,
+        SwaggerConfig.class,
+        SpringDocUIConfiguration.class
+})
+*/
 public class OpenApiConfig {
     
     @Bean

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
+
+    <changeSet id="004-create-auth-user-table" author="system">
+        <validCheckSum>ANY</validCheckSum>
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="auth_user"/>
+            </not>
+        </preConditions>
+        
+        <createTable tableName="auth_user">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="varchar(255)">
+                <constraints nullable="false" unique="true" uniqueConstraintName="uk_auth_user_username"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="full_name" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="enabled" type="boolean" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="timestamp">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <createIndex indexName="idx_auth_user_username" tableName="auth_user">
+            <column name="username"/>
+        </createIndex>
+        
+    </changeSet>
+    
+    <changeSet id="004-insert-default-admin" author="system">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="0">SELECT COUNT(*) FROM auth_user WHERE username = 'admin'</sqlCheck>
+        </preConditions>
+        
+        <insert tableName="auth_user">
+            <column name="username" value="admin"/>
+            <column name="password" value="admin123"/>
+            <column name="full_name" value="Administrator"/>
+            <column name="enabled" value="true"/>
+            <column name="created_at" value="2024-01-01 00:00:00"/>
+        </insert>
+        
+    </changeSet>
+
+</databaseChangeLog>

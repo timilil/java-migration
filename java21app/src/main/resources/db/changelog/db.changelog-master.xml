@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
 
     <include file="db/changelog/001-create-users-table.xml"/>
+    <include file="db/changelog/008-integration-test-users-table.xml"/>
+    <include file="db/changelog/002-create-documents-table.xml"/>
+    <include file="db/changelog/003-create-sharing-and-audit-tables.xml"/>
+    <include file="db/changelog/004-create-auth-user-table.xml"/>
+    <include file="db/changelog/005-integration-test-context.xml"/>
+    <include file="db/changelog/006-application-context.xml"/>
+    <include file="db/changelog/007-create-document-access-log-sequence.xml"/>
 
 </databaseChangeLog>

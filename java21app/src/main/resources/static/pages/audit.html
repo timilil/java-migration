@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Logs - Document Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header { background: white; padding: 25px; border-radius: 10px; margin-bottom: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .header a { display: inline-block; margin-bottom: 15px; color: #667eea; text-decoration: none; font-weight: 600; }
+        .header a:hover { text-decoration: underline; }
+        .header h1 { color: #333; margin-bottom: 5px; font-size: 32px; }
+        .header p { color: #666; font-size: 14px; }
+        .tabs { display: flex; gap: 10px; margin-top: 20px; border-bottom: 2px solid #e0e0e0; flex-wrap: wrap; }
+        .tab-btn { padding: 12px 20px; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #999; transition: all 0.3s; font-size: 13px; }
+        .tab-btn.active { color: #667eea; border-bottom-color: #667eea; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-card { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 14px; }
+        input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-family: inherit; font-size: 14px; }
+        input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        button { padding: 10px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 14px; }
+        button:hover { background: #5568d3; }
+        button.secondary { background: #e0e0e0; color: #333; }
+        button.secondary:hover { background: #d0d0d0; }
+        .result-box { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-top: 15px; border-left: 4px solid #667eea; font-size: 13px; overflow-y: auto; font-family: 'Courier New', monospace; white-space: pre-wrap; word-break: break-word; max-height: 500px; }
+        .result-box.error { background: #ffebee; border-left-color: #f44336; color: #c62828; }
+        .result-box.success { background: #e8f5e9; border-left-color: #4caf50; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/">← Back to Home</a>
+            <h1>Audit Logs</h1>
+            <p>View document access logs and statistics</p>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(event, 'full')">Full Access Log</button>
+                <button class="tab-btn" onclick="switchTab(event, 'recent')">Recent Activity</button>
+                <button class="tab-btn" onclick="switchTab(event, 'stats')">Statistics</button>
+            </div>
+        </div>
+
+        <!-- Full Log Tab -->
+        <div id="full" class="tab-content active">
+            <div class="form-card">
+                <h3>Complete Access Log</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="fullDocId" placeholder="1" value="1">
+                </div>
+                <button class="secondary" onclick="getFullLog()">Load Full Log</button>
+                <div class="result-box" id="fullResult"></div>
+            </div>
+        </div>
+
+        <!-- Recent Tab -->
+        <div id="recent" class="tab-content">
+            <div class="form-card">
+                <h3>Recent Access Activity</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="recentDocId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Days Back</label>
+                    <input type="number" id="daysBack" placeholder="7" value="7" min="1">
+                </div>
+                <button class="secondary" onclick="getRecentLog()">Load Recent Activity</button>
+                <div class="result-box" id="recentResult"></div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="stats" class="tab-content">
+            <div class="form-card">
+                <h3>Access Statistics</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="statsDocId" placeholder="1" value="1">
+                </div>
+                <button class="secondary" onclick="getStats()">Get Statistics</button>
+                <div class="result-box" id="statsResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(e, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            e.target.classList.add('active');
+        }
+
+        async function apiCall(method, endpoint) {
+            try {
+                const response = await fetch('/api' + endpoint, { method });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json().catch(() => response.text());
+            } catch (e) {
+                throw e;
+            }
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.className = 'result-box' + (isError ? ' error' : ' success');
+                el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+            }
+        }
+
+        async function getFullLog() {
+            try {
+                const docId = document.getElementById('fullDocId').value || '1';
+                const result = await apiCall('GET', `/documents/${docId}/access-log`);
+                showResult('fullResult', result || []);
+            } catch (e) {
+                showResult('fullResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function getRecentLog() {
+            try {
+                const docId = document.getElementById('recentDocId').value || '1';
+                const days = document.getElementById('daysBack').value || '7';
+                const result = await apiCall('GET', `/documents/${docId}/access-log/recent?days=${days}`);
+                showResult('recentResult', result || []);
+            } catch (e) {
+                showResult('recentResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function getStats() {
+            try {
+                const docId = document.getElementById('statsDocId').value || '1';
+                const result = await apiCall('GET', `/documents/${docId}/access-stats`);
+                showResult('statsResult', result);
+            } catch (e) {
+                showResult('statsResult', `Error: ${e.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

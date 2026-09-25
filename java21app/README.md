@@ -99,7 +99,7 @@ mvn clean package -DskipTests
 mvn test
 
 # Run integration tests
-mvn verify
+mvn verify -Dfailsafe.useModulePath=false
 
 # Run specific test
 mvn test -Dtest=UserServiceTest
@@ -150,7 +150,7 @@ java -jar target/java21-spring-app-3.0.0.jar --spring.profiles.active=prod
 
 ```bash
 # Integration tests use H2 in-memory database
-mvn verify
+mvn verify -Dfailsafe.useModulePath=false
 ```
 
 ## Profiles

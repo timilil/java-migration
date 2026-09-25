@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.env.Environment;
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -30,11 +29,14 @@ public class SpringConfig {
 
     /**
      * Create HikariCP connection pool DataSource
-     * Only active for 'prod' profile
      */
     @Bean
-    @Profile("prod")
+    @Profile({"dev", "prod"})
     public DataSource dataSource(Environment env) {
+        return new HikariDataSource(hikariConfig(env));
+    }
+
+    HikariConfig hikariConfig(Environment env) {
         String url = env.getProperty("spring.datasource.url");
         String username = env.getProperty("spring.datasource.username");
         String password = env.getProperty("spring.datasource.password");
@@ -51,16 +53,25 @@ public class SpringConfig {
         config.setIdleTimeout(600000);
         config.setMaxLifetime(1800000);
         
-        return new HikariDataSource(config);
+        return config;
     }
 
+    @Bean
+    @Profile("integration-test")
+    public DataSource integrationTestDataSource(Environment env) {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName(env.getProperty("spring.datasource.driver-class-name", "org.h2.Driver"));
+        dataSource.setUrl(env.getProperty("spring.datasource.url"));
+        dataSource.setUsername(env.getProperty("spring.datasource.username", "sa"));
+        dataSource.setPassword(env.getProperty("spring.datasource.password", ""));
+        return dataSource;
+    }
 
     /**
      * Create Liquibase bean for database migrations
-     * Only active for 'prod' profile
      */
     @Bean
-    @Profile("prod")
+    @Profile({"dev", "prod", "integration-test"})
     public SpringLiquibase liquibase(DataSource dataSource, Environment env) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
@@ -76,11 +87,10 @@ public class SpringConfig {
 
     /**
      * Create EntityManagerFactory
-     * Only for 'prod' profile
      * Depends on Liquibase so schema migrations run before Hibernate validates the schema
      */
     @Bean
-    @Profile("prod")
+    @Profile({"dev", "prod", "integration-test"})
     @DependsOn("liquibase")
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(
             DataSource dataSource, Environment env) {
@@ -111,10 +121,9 @@ public class SpringConfig {
 
     /**
      * Create Transaction Manager
-     * Only for 'prod' profile
      */
     @Bean
-    @Profile("prod")
+    @Profile({"dev", "prod", "integration-test"})
     public PlatformTransactionManager transactionManager(EntityManagerFactory emf) {
         return new JpaTransactionManager(emf);
     }

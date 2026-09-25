@@ -17,7 +17,7 @@ public class SecurityConfig {
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        /*TODO http
             .csrf().disable()
             .authorizeHttpRequests()
                 .requestMatchers("/api/users/**").permitAll()
@@ -28,7 +28,34 @@ public class SecurityConfig {
             .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
-                .httpBasic();
+                .httpBasic();*/
+
+        http
+            .csrf().disable()
+            .authorizeHttpRequests()
+                // Login endpoint - public access
+                .requestMatchers("/login", "/api/auth/status").permitAll()
+                // API endpoints - public access (for testing/demo)
+                .requestMatchers("/api/**").permitAll()
+                // API docs - public access
+                .requestMatchers("/swagger-ui.html").permitAll()
+                .requestMatchers("/v3/api-docs/**").permitAll()
+                .requestMatchers("/swagger-ui/**").permitAll()
+                // All other requests require authentication
+                .anyRequest().authenticated()
+            .and()
+                .formLogin()
+                .loginPage("/login")
+                .permitAll()
+                .defaultSuccessUrl("/", true)
+            .and()
+                .logout()
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login")
+                .permitAll()
+            .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
         
         return http.build();
     }
