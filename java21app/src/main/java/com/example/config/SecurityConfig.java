@@ -8,8 +8,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * Spring Security Configuration for Spring Security 6.x
- * Uses the new SecurityFilterChain approach instead of deprecated WebSecurityConfigurerAdapter
+ * Spring Security Configuration using the SecurityFilterChain approach.
  */
 @Configuration
 @EnableWebSecurity
@@ -31,8 +30,9 @@ public class SecurityConfig {
                 .httpBasic();*/
 
         http
-            .csrf().disable()
-            .authorizeHttpRequests()
+            // Preserve the existing demo/API configuration; add CSRF protection before using cookie-authenticated mutations in production.
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(authorize -> authorize
                 // Login endpoint - public access
                 .requestMatchers("/login", "/api/auth/status").permitAll()
                 // API endpoints - public access (for testing/demo)
@@ -42,20 +42,17 @@ public class SecurityConfig {
                 .requestMatchers("/v3/api-docs/**").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 // All other requests require authentication
-                .anyRequest().authenticated()
-            .and()
-                .formLogin()
+                .anyRequest().authenticated())
+            .formLogin(form -> form
                 .loginPage("/login")
                 .permitAll()
-                .defaultSuccessUrl("/", true)
-            .and()
-                .logout()
+                .defaultSuccessUrl("/", true))
+            .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login")
-                .permitAll()
-            .and()
-                .sessionManagement()
-                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
+                .permitAll())
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
         
         return http.build();
     }

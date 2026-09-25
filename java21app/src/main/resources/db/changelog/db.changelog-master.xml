@@ -14,5 +14,6 @@
     <include file="db/changelog/006-application-context.xml"/>
     <include file="db/changelog/007-create-document-access-log-sequence.xml"/>
     <include file="db/changelog/009-synchronize-document-access-log-sequence.xml"/>
+    <include file="db/changelog/010-share-document-access-log-id-sequence.xml"/>
 
 </databaseChangeLog>

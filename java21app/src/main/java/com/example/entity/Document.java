@@ -28,13 +28,13 @@ public class Document implements Serializable {
     @Column(name = "owner_id", nullable = false)
     private Long ownerId;
     
-    @Column(name = "content_type")
+    @Column(name = "content_type", length = 100)
     private String contentType;
     
     @Column(name = "file_size")
     private Long fileSize;
     
-    @Column(name = "storage_path")
+    @Column(name = "storage_path", length = 500)
     private String storagePath;
     
     @Column(name = "created_at", nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")

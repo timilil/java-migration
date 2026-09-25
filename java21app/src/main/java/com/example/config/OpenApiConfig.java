@@ -9,7 +9,7 @@ import io.swagger.v3.oas.models.info.License;
 
 /**
  * OpenAPI / Swagger UI Configuration
- * For springdoc-openapi-starter-webmvc-ui 2.x with Spring Framework 6.x
+ * For springdoc-openapi-starter-webmvc-ui 2.x with the manually configured Spring MVC application.
  * 
  * Defines OpenAPI beans manually for use with manual Jetty + Spring Framework setup.
  */
@@ -35,7 +35,7 @@ public class OpenApiConfig {
             .info(new Info()
                 .title("User Management API")
                 .version("3.0.0")
-                .description("REST API for user management with Spring Framework 6.x and Java 21")
+                .description("REST API for user management with Spring Framework 7.x and Java 21")
                 .license(new License()
                     .name("Apache 2.0")
                     .url("https://www.apache.org/licenses/LICENSE-2.0.html")));
