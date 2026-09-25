@@ -329,8 +329,8 @@ public class DocumentService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<DocumentAccessLog> getLatestAccessLogById() {
-        return Optional.ofNullable(documentAccessLogRepository.findFirstByOrderByIdDesc());
+    public Optional<DocumentAccessLog> getLatestAccessLog() {
+        return Optional.ofNullable(documentAccessLogRepository.findFirstByOrderByAccessedAtDescIdDesc());
     }
     
     /**

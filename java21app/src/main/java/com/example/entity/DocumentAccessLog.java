@@ -20,7 +20,7 @@ public class DocumentAccessLog implements Serializable {
     
     @Id
     @SequenceGenerator(name = "document_access_log_generator", sequenceName = "document_access_log_seq", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = "document_access_log_generator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "document_access_log_generator")
     @Column(name = "id")
     private Long id;
     

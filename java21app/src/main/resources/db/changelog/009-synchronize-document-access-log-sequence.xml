@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
+
+    <!-- Keep future sequence-generated IDs above both the current sequence and existing rows. -->
+    <changeSet id="009-synchronize-document-access-log-sequence" author="system" dbms="postgresql">
+        <sql splitStatements="false">
+            SELECT setval(
+                'document_access_log_seq',
+                GREATEST(
+                    (SELECT last_value FROM document_access_log_seq),
+                    COALESCE((SELECT MAX(id) FROM document_access_logs), 0)
+                ),
+                true
+            );
+        </sql>
+    </changeSet>
+</databaseChangeLog>

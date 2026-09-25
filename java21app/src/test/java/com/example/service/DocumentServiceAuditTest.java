@@ -124,14 +124,14 @@ public class DocumentServiceAuditTest {
     }
 
     @Test
-    public void testGetLatestAccessLogById() {
+    public void testGetLatestAccessLog() {
         DocumentAccessLog latest = new DocumentAccessLog(1L, 1L, "VIEW");
         latest.setId(2L);
-        when(documentAccessLogRepository.findFirstByOrderByIdDesc()).thenReturn(latest);
+        when(documentAccessLogRepository.findFirstByOrderByAccessedAtDescIdDesc()).thenReturn(latest);
 
-        assertTrue(documentService.getLatestAccessLogById().isPresent());
-        assertEquals(Long.valueOf(2L), documentService.getLatestAccessLogById().get().getId());
-        verify(documentAccessLogRepository, times(2)).findFirstByOrderByIdDesc();
+        assertTrue(documentService.getLatestAccessLog().isPresent());
+        assertEquals(Long.valueOf(2L), documentService.getLatestAccessLog().get().getId());
+        verify(documentAccessLogRepository, times(2)).findFirstByOrderByAccessedAtDescIdDesc();
     }
     
     @Test

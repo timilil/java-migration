@@ -30,10 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
+import java.time.LocalDateTime;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = DocumentPersistenceIntegrationTest.PersistenceConfig.class)
@@ -84,16 +86,21 @@ public class DocumentPersistenceIntegrationTest {
     public void latestAccessLogLookupReturnsMostRecentlyCreatedAuditRow() {
         User owner = userRepository.save(new User("latest_owner", "latest-owner@example.com", "pw"));
         Document document = documentRepository.save(new Document("Latest test", owner.getId(), "text/plain"));
-        DocumentAccessLog earlier = new DocumentAccessLog(document.getId(), owner.getId(), "VIEW");
-        DocumentAccessLog later = new DocumentAccessLog(document.getId(), owner.getId(), "EDIT");
-        documentAccessLogRepository.saveAndFlush(earlier);
-        documentAccessLogRepository.saveAndFlush(later);
+        LocalDateTime earlierAccessTime = LocalDateTime.of(2026, 1, 1, 12, 0);
+        LocalDateTime laterAccessTime = earlierAccessTime.plusDays(1);
+        DocumentAccessLog laterId = new DocumentAccessLog(document.getId(), owner.getId(), "EDIT");
+        laterId.setAccessedAt(earlierAccessTime);
+        DocumentAccessLog newest = new DocumentAccessLog(document.getId(), owner.getId(), "VIEW");
+        newest.setAccessedAt(laterAccessTime);
+        documentAccessLogRepository.saveAndFlush(newest);
+        documentAccessLogRepository.saveAndFlush(laterId);
 
-        DocumentAccessLog latest = documentAccessLogRepository.findFirstByOrderByIdDesc();
+        DocumentAccessLog latest = documentAccessLogRepository.findFirstByOrderByAccessedAtDescIdDesc();
 
         assertNotNull(latest);
-        assertEquals(later.getId(), latest.getId());
-        assertEquals("EDIT", latest.getActionType());
+        assertEquals(newest.getId(), latest.getId());
+        assertEquals("VIEW", latest.getActionType());
+        assertTrue(newest.getId() < laterId.getId());
     }
 
     @Configuration
