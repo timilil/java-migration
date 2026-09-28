@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
+
+    <!-- Use the same sequence for Hibernate-generated IDs and SQL inserts using the column default. -->
+    <changeSet id="010-share-document-access-log-id-sequence" author="system" dbms="postgresql">
+        <sql>ALTER TABLE document_access_logs ALTER COLUMN id DROP IDENTITY IF EXISTS</sql>
+        <sql>ALTER TABLE document_access_logs ALTER COLUMN id SET DEFAULT nextval('document_access_log_seq'::regclass)</sql>
+    </changeSet>
+</databaseChangeLog>

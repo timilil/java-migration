@@ -23,12 +23,12 @@ import java.util.Optional;
 @Tag(name = "Users", description = "User Management API")
 @Profile("prod")
 public class UserController {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    
+
     @Autowired
     private UserService userService;
-    
+
     /**
      * Get all users
      * @return list of all users
@@ -40,7 +40,7 @@ public class UserController {
         List<User> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
-    
+
     /**
      * Get user by ID
      * @param id the user ID
@@ -52,9 +52,9 @@ public class UserController {
         logger.info("GET /api/users/{} - Retrieving user", id);
         Optional<User> user = userService.getUserById(id);
         return user.map(ResponseEntity::ok)
-                   .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    
+
     /**
      * Get user by username
      * @param username the username
@@ -66,9 +66,9 @@ public class UserController {
         logger.info("GET /api/users/search/username?username={} - Retrieving user", username);
         Optional<User> user = userService.getUserByUsername(username);
         return user.map(ResponseEntity::ok)
-                   .orElseGet(() -> ResponseEntity.notFound().build());
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
-    
+
     /**
      * Create a new user
      * @param user the user data
@@ -86,7 +86,7 @@ public class UserController {
             return ResponseEntity.badRequest().build();
         }
     }
-    
+
     /**
      * Update an existing user
      * @param id the user ID
@@ -106,7 +106,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
-    
+
     /**
      * Delete a user
      * @param id the user ID

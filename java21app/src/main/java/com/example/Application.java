@@ -94,8 +94,12 @@ public class Application {
         logger.info("Creating Jetty server on port: {}", port);
         Server server = new Server(port);
 
-        // Create servlet context for Spring DispatcherServlet
-        ServletContextHandler servletContext = new ServletContextHandler();
+        /*TODO  Create servlet context for Spring DispatcherServlet
+        //ServletContextHandler servletContext = new ServletContextHandler();
+        //servletContext.setContextPath("/");*/
+        // Create servlet context (SESSIONS flag installs a SessionHandler so
+        // request.getSession() works, e.g. for LoginController/StatusController)
+        ServletContextHandler servletContext = new ServletContextHandler(ServletContextHandler.SESSIONS);
         servletContext.setContextPath("/");
 
         // Add static resource filter to serve Swagger UI and other static files

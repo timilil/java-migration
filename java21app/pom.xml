@@ -19,14 +19,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         
         <!-- Dependency Versions -->
-        <spring.framework.version>6.2.19</spring.framework.version>
-        <spring.security.version>6.5.11</spring.security.version>
-        <spring.data.jpa.version>3.5.13</spring.data.jpa.version>
-        <hibernate.version>6.6.56.Final</hibernate.version>
+        <spring.framework.version>7.0.8</spring.framework.version>
+        <spring.security.version>7.0.7</spring.security.version>
+        <spring.data.jpa.version>4.0.7</spring.data.jpa.version>
+        <hibernate.version>7.2.25.Final</hibernate.version>
         <postgresql.version>42.7.3</postgresql.version>
         <liquibase.version>4.30.0</liquibase.version>
         <jackson.version>2.18.0</jackson.version>
-        <junit.version>5.11.0</junit.version>
+        <junit.version>6.1.3</junit.version>
         <mockito.version>5.12.0</mockito.version>
         <springdoc.openapi.version>2.1.0</springdoc.openapi.version>
         <jetty.version>11.0.26</jetty.version>
@@ -39,6 +39,7 @@
         <maven.surefire.plugin.version>3.3.1</maven.surefire.plugin.version>
         <maven.failsafe.plugin.version>3.3.1</maven.failsafe.plugin.version>
         <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
+        <servlet.api.version>6.1.0</servlet.api.version>
         <slf4j.version>2.0.13</slf4j.version>
         <logback.version>1.5.0</logback.version>
     </properties>
@@ -129,7 +130,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
-            <version>6.1.0</version>
+            <version>${servlet.api.version}</version>
         </dependency>
 
         <!-- Logging -->
@@ -230,6 +231,7 @@
                     <source>21</source>
                     <target>21</target>
                     <release>21</release>
+                    <parameters>true</parameters>
                 </configuration>
             </plugin>
             <plugin>
@@ -240,6 +242,9 @@
                     <includes>
                         <include>**/*Test.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/*IntegrationTest.java</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
             <plugin>
@@ -251,6 +256,39 @@
                         <include>**/*IntegrationTest.java</include>
                     </includes>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <id>add-integration-test-sources</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>add-test-source</goal>
+                            <goal>add-test-resource</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/integration-test/java</source>
+                            </sources>
+                            <resources>
+                                <resource>
+                                    <directory>src/integration-test/resources</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.liquibase</groupId>

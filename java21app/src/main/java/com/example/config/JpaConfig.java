@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * Enables repositories and transaction management
  */
 @Configuration
-@Profile("prod")
+@Profile({"dev", "prod", "integration-test"})
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "com.example.repository")
 public class JpaConfig {
