@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documents - Document Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .header a {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .header a:hover { text-decoration: underline; }
+        .header h1 { color: #333; margin-bottom: 5px; font-size: 32px; }
+        .header p { color: #666; font-size: 14px; }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #999;
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .form-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        textarea { min-height: 80px; }
+        button {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        button:hover { background: #5568d3; }
+        button.secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        button.secondary:hover { background: #d0d0d0; }
+        .result-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+            font-size: 13px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 400px;
+        }
+        .result-box.error { background: #ffebee; border-left-color: #f44336; color: #c62828; }
+        .result-box.success { background: #e8f5e9; border-left-color: #4caf50; color: #2e7d32; }
+        .list-item {
+            background: white;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-left: 3px solid #667eea;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/">← Back to Home</a>
+            <h1>Documents</h1>
+            <p>Create, read, update, and delete documents</p>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(event, 'list')">List Documents</button>
+                <button class="tab-btn" onclick="switchTab(event, 'create')">Create Document</button>
+                <button class="tab-btn" onclick="switchTab(event, 'get')">Get Document</button>
+                <button class="tab-btn" onclick="switchTab(event, 'update')">Update Document</button>
+                <button class="tab-btn" onclick="switchTab(event, 'delete')">Delete Document</button>
+                <button class="tab-btn" onclick="switchTab(event, 'search')">Search</button>
+            </div>
+        </div>
+
+        <!-- List Tab -->
+        <div id="list" class="tab-content active">
+            <div class="form-card">
+                <h3>Documents by Owner</h3>
+                <div class="form-group">
+                    <label>Owner ID</label>
+                    <input type="number" id="listOwnerId" placeholder="1" value="1">
+                </div>
+                <button class="secondary" onclick="listDocuments()">Load Documents</button>
+                <div class="result-box" id="listResult"></div>
+            </div>
+        </div>
+
+        <!-- Create Tab -->
+        <div id="create" class="tab-content">
+            <div class="form-card">
+                <h3>Create New Document</h3>
+                <div class="form-group">
+                    <label>Owner ID</label>
+                    <input type="number" id="createOwnerId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="createTitle" placeholder="My Document">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="createDescription" placeholder="Document description..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Content Type</label>
+                    <input type="text" id="createContentType" placeholder="application/pdf" value="application/pdf">
+                </div>
+                <div class="form-group">
+                    <label>File Size (bytes)</label>
+                    <input type="number" id="createFileSize" placeholder="1024" value="1024">
+                </div>
+                <button onclick="createDocument()">Create Document</button>
+                <div class="result-box" id="createResult"></div>
+            </div>
+        </div>
+
+        <!-- Get Tab -->
+        <div id="get" class="tab-content">
+            <div class="form-card">
+                <h3>Get Document by ID</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="getDocId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Owner ID</label>
+                    <input type="number" id="getOwnerId" placeholder="1" value="1">
+                </div>
+                <button onclick="getDocument()">Get Document</button>
+                <div class="result-box" id="getResult"></div>
+            </div>
+        </div>
+
+        <!-- Update Tab -->
+        <div id="update" class="tab-content">
+            <div class="form-card">
+                <h3>Update Document</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="updateDocId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Owner ID</label>
+                    <input type="number" id="updateOwnerId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" id="updateTitle" placeholder="Updated title">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="updateDescription" placeholder="Updated description..."></textarea>
+                </div>
+                <button onclick="updateDocument()">Update Document</button>
+                <div class="result-box" id="updateResult"></div>
+            </div>
+        </div>
+
+        <!-- Delete Tab -->
+        <div id="delete" class="tab-content">
+            <div class="form-card">
+                <h3>Delete Document</h3>
+                <div class="form-group">
+                    <label>Document ID</label>
+                    <input type="number" id="deleteDocId" placeholder="1" value="1">
+                </div>
+                <div class="form-group">
+                    <label>Owner ID</label>
+                    <input type="number" id="deleteOwnerId" placeholder="1" value="1">
+                </div>
+                <button class="secondary" onclick="deleteDocument()" style="background: #f44336;">Delete Document</button>
+                <div class="result-box" id="deleteResult"></div>
+            </div>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="search" class="tab-content">
+            <div class="form-card">
+                <h3>Search Documents</h3>
+                <div class="form-group">
+                    <label>Search by Title</label>
+                    <input type="text" id="searchTitle" placeholder="Search query...">
+                </div>
+                <button onclick="searchDocuments()">Search</button>
+                <div class="result-box" id="searchResult"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(e, tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            e.target.classList.add('active');
+        }
+
+        async function apiCall(method, endpoint, data = null) {
+            try {
+                const options = { method, headers: { 'Content-Type': 'application/json' } };
+                if (data) options.body = JSON.stringify(data);
+                const response = await fetch('/api' + endpoint, options);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json().catch(() => response.text());
+            } catch (e) {
+                throw e;
+            }
+        }
+
+        function showResult(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.className = 'result-box' + (isError ? ' error' : ' success');
+                if (Array.isArray(data)) {
+                    el.innerHTML = data.map(d => 
+                        `<div class="list-item">ID: ${d.id} | ${d.title} | ${d.contentType || 'N/A'}</div>`
+                    ).join('');
+                } else if (typeof data === 'object') {
+                    el.textContent = JSON.stringify(data, null, 2);
+                } else {
+                    el.textContent = data;
+                }
+            }
+        }
+
+        async function listDocuments() {
+            try {
+                const ownerId = document.getElementById('listOwnerId').value || '1';
+                const result = await apiCall('GET', `/documents/user/${ownerId}`);
+                showResult('listResult', result || []);
+            } catch (e) {
+                showResult('listResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function createDocument() {
+            try {
+                const doc = {
+                    title: document.getElementById('createTitle').value,
+                    description: document.getElementById('createDescription').value,
+                    ownerId: parseInt(document.getElementById('createOwnerId').value || '1'),
+                    contentType: document.getElementById('createContentType').value,
+                    fileSize: parseInt(document.getElementById('createFileSize').value || '0'),
+                    storagePath: '/storage/default'
+                };
+                if (!doc.title) throw new Error('Title is required');
+                const result = await apiCall('POST', '/documents', doc);
+                showResult('createResult', result);
+            } catch (e) {
+                showResult('createResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function getDocument() {
+            try {
+                const docId = document.getElementById('getDocId').value || '1';
+                const ownerId = document.getElementById('getOwnerId').value || '1';
+                const result = await apiCall('GET', `/documents/${docId}?ownerId=${ownerId}`);
+                showResult('getResult', result || {});
+            } catch (e) {
+                showResult('getResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function updateDocument() {
+            try {
+                const docId = document.getElementById('updateDocId').value;
+                const doc = {
+                    ownerId: document.getElementById('updateOwnerId').value,
+                    title: document.getElementById('updateTitle').value,
+                    description: document.getElementById('updateDescription').value
+                };
+                const result = await apiCall('PUT', `/documents/${docId}`, doc);
+                showResult('updateResult', result || 'Document updated successfully');
+            } catch (e) {
+                showResult('updateResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function deleteDocument() {
+            try {
+                const docId = document.getElementById('deleteDocId').value;
+                const ownerId = document.getElementById('deleteOwnerId').value;
+                if (!confirm(`Are you sure you want to delete document ${docId}?`)) return;
+                const result = await apiCall('DELETE', `/documents/${docId}?ownerId=${ownerId}`);
+                showResult('deleteResult', 'Document deleted successfully');
+            } catch (e) {
+                showResult('deleteResult', `Error: ${e.message}`, true);
+            }
+        }
+
+        async function searchDocuments() {
+            try {
+                const title = document.getElementById('searchTitle').value;
+                if (!title) throw new Error('Enter a search term');
+                const result = await apiCall('GET', `/documents/search?title=${encodeURIComponent(title)}`);
+                showResult('searchResult', result || []);
+            } catch (e) {
+                showResult('searchResult', `Error: ${e.message}`, true);
+            }
+        }
+    </script>
+</body>
+</html>

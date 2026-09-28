@@ -8,6 +8,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 
 /**
  * Spring Security Configuration
+ * 
+ * Note: For Java 17/21 migration:
+ * - Replace WebSecurityConfigurerAdapter with SecurityFilterChain bean (Spring Security 5.7+)
+ * - Use HttpSecurity DSL syntax
+ * - Session management uses ALWAYS (sessions required for authentication)
  */
 @Configuration
 @EnableWebSecurity
@@ -18,14 +23,28 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
             .csrf().disable()
             .authorizeRequests()
-                .antMatchers("/api/users/**").permitAll()
+                // Login endpoint - public access
+                .antMatchers("/login", "/api/auth/status").permitAll()
+                // API endpoints - public access (for testing/demo)
+                .antMatchers("/api/**").permitAll()
+                // API docs - public access
                 .antMatchers("/swagger-ui.html").permitAll()
                 .antMatchers("/v3/api-docs/**").permitAll()
                 .antMatchers("/swagger-ui/**").permitAll()
+                // All other requests require authentication
                 .anyRequest().authenticated()
             .and()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .formLogin()
+                .loginPage("/login")
+                .permitAll()
+                .defaultSuccessUrl("/", true)
             .and()
-                .httpBasic();
+                .logout()
+                .logoutUrl("/logout")
+                .logoutSuccessUrl("/login")
+                .permitAll()
+            .and()
+                .sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED);
     }
 }
