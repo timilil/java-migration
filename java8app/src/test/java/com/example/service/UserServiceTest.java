@@ -113,7 +113,7 @@ public class UserServiceTest {
     public void testUpdateUser() {
         // Arrange
         testUser.setFullName("Updated User");
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(java.util.Optional.of(testUser));
         when(userRepository.save(testUser)).thenReturn(testUser);
         
         // Act
@@ -122,7 +122,7 @@ public class UserServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals("Updated User", result.getFullName());
-        verify(userRepository, times(1)).existsById(1L);
+        verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).save(testUser);
     }
     
@@ -130,7 +130,7 @@ public class UserServiceTest {
     public void testUpdateNonExistentUser() {
         // Arrange
         testUser.setId(999L);
-        when(userRepository.existsById(999L)).thenReturn(false);
+        when(userRepository.findById(999L)).thenReturn(java.util.Optional.empty());
         
         // Act & Assert - should throw exception
         userService.updateUser(testUser);

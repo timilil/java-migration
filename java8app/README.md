@@ -12,25 +12,26 @@ java8app/
 │   │   ├── java/com/example/
 │   │   │   ├── Application.java              # Main entry point with manual Jetty + Spring init
 │   │   │   ├── config/                       # Spring configuration classes
-│   │   │   │   ├── SpringConfig.java         # Core Spring beans (datasource, liquibase for prod)
-│   │   │   │   └── JpaConfig.java            # JPA repositories (prod profile only)
+│   │   │   │   ├── SpringConfig.java         # Core Spring beans (datasource, liquibase, JPA)
+│   │   │   │   ├── JpaConfig.java            # JPA repositories (dev/prod/integration-test)
+│   │   │   │   ├── AppConfig.java            # RestTemplate/HttpClient/ObjectMapper beans
+│   │   │   │   └── H2CompatibleDialect.java  # H2Dialect fix for identity-insert on H2 2.x
 │   │   │   ├── controller/                   # REST controllers
-│   │   │   ├── entity/                       # JPA entities
-│   │   │   ├── repository/                   # Data access repositories (prod profile only)
-│   │   │   └── service/                      # Business logic services
+│   │   │   ├── dto/                          # DTOs, incl. ExternalTodoDTO (Jackson mapping)
+│   │   │   ├── entity/                       # JPA entities, incl. SharePermission enum
+│   │   │   ├── repository/                   # Data access repositories
+│   │   │   └── service/                      # Business logic services, incl. ExternalTodoClient
 │   │   └── resources/
-│   │       ├── application.properties         # Default properties (dev profile)
-│   │       ├── application-dev.properties     # Development profile (Jetty on 8080, no DB)
+│   │       ├── application.properties         # Default/shared properties
+│   │       ├── application-dev.properties     # Development profile (PostgreSQL + Liquibase)
 │   │       ├── application-prod.properties    # Production profile (PostgreSQL with Liquibase)
 │   │       ├── application-test.properties    # Test profile
-│   │       ├── application-integration-test.properties  # Integration test profile
-│   │       └── db/changelog/                 # Liquibase database migrations (prod only)
+│   │       ├── application-integration-test.properties  # Integration test profile (H2)
+│   │       └── db/changelog/                 # Liquibase migrations, context-scoped per DB
 │   ├── test/
-│   │   └── java/com/example/service/
-│   │       └── UserServiceTest.java          # Unit tests
+│   │   └── java/com/example/                 # Unit tests + JVM-local IntegrationTest classes
 │   └── integration-test/
-│       └── java/com/example/integration/
-│           └── UserRepositoryIntegrationTest.java  # Integration tests
+│       └── java/com/example/integration/     # Integration tests (H2, wired via build-helper-maven-plugin)
 └── README.md
 ```
 
@@ -48,9 +49,9 @@ java8app/
 - **JUnit 4.x** - Unit testing
 - **Mockito 1.x** - Mocking framework
 - **SpringDoc OpenAPI 1.x** - API documentation
-- **Apache HttpClient 4.x** - HTTP client
-- **C3P0 0.9.5.x** - Connection pooling (prod only)
-- **H2 2.x** - In-memory database (test only)
+- **Apache HttpClient 4.x** - HTTP client (used by `ExternalTodoClient` to call an external JSON API and map the response to a DTO via Jackson)
+- **C3P0 0.9.5.x** - Connection pooling (dev/prod)
+- **H2 2.x** - In-memory database (test/integration-test only)
 - **SLF4J & Logback** - Logging
 
 ## Building the Project
@@ -99,9 +100,10 @@ java -jar target/java8-spring-app-1.0.0.jar --spring.profiles.active=dev
 
 **Dev Profile Features:**
 - Jetty server listens on `http://localhost:8080`
-- No database required (JPA repositories disabled)
+- Requires a PostgreSQL database (`jdbc:postgresql://localhost:5432/java8app_dev` by default) — DataSource, Liquibase, EntityManagerFactory and JPA repositories are all enabled, same as prod
+- Liquibase runs with `spring.liquibase.contexts=application`
 - Spring component scanning discovers all @Component, @Service, @Controller beans
-- ✅ Application starts successfully
+- ✅ Application starts successfully once the database is reachable
 - ✅ Server responds on localhost:8080
 - Visit `http://localhost:8080/` for a status page confirming the app is running and showing the active profile
 
@@ -123,20 +125,25 @@ java -jar target/java8-spring-app-1.0.0.jar --spring.profiles.active=prod
 ### Test Profiles
 
 ```bash
-# Integration tests use H2 in-memory database
-mvn verify -Pintegration-test
+# Unit tests only (IntegrationTest classes are excluded from surefire)
+mvn test
+
+# Full build incl. Failsafe integration tests (src/test + src/integration-test, H2-backed)
+mvn verify
 ```
 
 ## Profiles
 
 The application supports 4 configuration profiles:
 
-| Profile | Database | Services/Controller | Repos | EntityMgr | Liquibase | Use Case |
-|---------|----------|-------------------|-------|-----------|-----------|----------|
-| **dev** (default) | None | ❌ | ❌ | ❌ | ❌ | Local development, no database dependencies |
-| **prod** | PostgreSQL | ✅ | ✅ | ✅ | ✅ | Production deployment with full DB features |
-| **test** | PostgreSQL | ✅ | ✅ | ✅ | ❌ | Test environment with real database |
-| **integration-test** | H2 (mem) | ✅ | ✅ | ✅ | ❌ | Integration testing with H2 database |
+| Profile | Database | Services/Controller | Repos | EntityMgr | Liquibase | Liquibase context | Use Case |
+|---------|----------|-------------------|-------|-----------|-----------|--------------------|----------|
+| **dev** (default) | PostgreSQL | ✅ | ✅ | ✅ | ✅ | `application` | Local development against a real Postgres DB |
+| **prod** | PostgreSQL | ✅ | ✅ | ✅ | ✅ | `application` | Production deployment with full DB features |
+| **test** | PostgreSQL | ✅ | ✅ | ✅ | ❌ | n/a | Test environment with real database |
+| **integration-test** | H2 (mem) | ✅ | ✅ | ✅ | ✅ | `integration-test` | Integration testing with H2 database |
+
+Liquibase changesets can be scoped with a `context` attribute (e.g. `context="application"` vs `context="integration-test"`) so different DDL/data runs depending on which database is active. The context is driven by `spring.liquibase.contexts` in each `application-{profile}.properties` file, and is resolved before JPA validates the schema (`entityManagerFactory` bean `@DependsOn("liquibase")`).
 
 ## Configuration Files
 
@@ -149,10 +156,22 @@ logging.level.root=INFO
 
 ### application-dev.properties
 ```properties
-# No database configuration
-# Repositories and EntityManager NOT created
+spring.datasource.url=jdbc:postgresql://localhost:5432/java8app_dev
+spring.datasource.username=dev_user
+spring.datasource.password=dev_password
+spring.liquibase.enabled=true
+spring.liquibase.contexts=application
 logging.level.com.example=DEBUG
 logging.level.org.springframework.web=DEBUG
+```
+
+### application-integration-test.properties
+```properties
+spring.datasource.url=jdbc:h2:mem:...
+spring.datasource.driver-class-name=org.h2.Driver
+spring.jpa.database-platform=com.example.config.H2CompatibleDialect
+spring.liquibase.contexts=integration-test
+# DataSource, EntityManagerFactory, TransactionManager, Liquibase created (H2)
 ```
 
 ### application-prod.properties
@@ -170,17 +189,17 @@ spring.liquibase.enabled=true
 
 ###  Initialization Flow
 
-1. `Application.main()` detects active profile
+1. `Application.main()` detects active profile (defaults to `dev`; also parses `--spring.profiles.active=X` manually, since there's no Spring Boot `ApplicationArguments`)
 2. Calls `createAndStartJettyServer(profile)`
 3. Creates `AnnotationConfigWebApplicationContext` with active profile set
 4. Loads `application.properties` and `application-{profile}.properties`
 5. Registers configuration classes:
-   - `SpringConfig` (always registered)
-   - `JpaConfig` (only if prod profile)
+   - `SpringConfig`, `AppConfig` (always registered)
+   - `JpaConfig` (profiles `dev`, `prod`, `integration-test`)
    - Other Spring components
 6. Spring context is refreshed:
-   - For **dev**: Creates basic Spring beans, NO database beans
-   - For **prod**: Creates database beans (DataSource, EntityManagerFactory, Liquibase)
+   - For **dev/prod**: Creates database beans (DataSource via C3P0, Liquibase, EntityManagerFactory) against PostgreSQL
+   - For **integration-test**: Creates database beans against H2 (`DriverManagerDataSource` + `H2CompatibleDialect`)
 7. Creates Jetty server with servlet context
 8. Registers `DispatcherServlet` mapping to `/*`
 9. Starts Jetty server on configured port
@@ -189,14 +208,17 @@ spring.liquibase.enabled=true
 ### Spring Configuration
 
 **SpringConfig.java** (always loaded):
-- DataSource bean (C3P0) - ✅ prod only
-- Liquibase bean - ✅ prod only  
+- DataSource bean (C3P0) for `dev`/`prod`, plain `DriverManagerDataSource` for `integration-test`
+- Liquibase bean for `dev`/`prod`/`integration-test`, contexts resolved from `spring.liquibase.contexts`
+- EntityManagerFactory `@DependsOn("liquibase")` so migrations run before schema validation
 - TransactionManager setup
 
-**JpaConfig.java** (prod profile only):
-- Enables `@EnableJpaRepositories` for prod profile
-- EntityManagerFactory bean
+**JpaConfig.java** (`dev`/`prod`/`integration-test` profiles):
+- Enables `@EnableJpaRepositories`
 - Repository auto-scanning
+
+**AppConfig.java** (always loaded):
+- `RestTemplate`, `CloseableHttpClient` and Jackson `ObjectMapper` beans used by `ExternalTodoClient`
 
 **Application.java**:
 - Manual Jetty initialization
@@ -210,21 +232,27 @@ spring.liquibase.enabled=true
 - spring.security.version = 5.3.10.RELEASE
 - spring.data.jpa.version = 2.2.13.RELEASE
 - hibernate.version = 5.4.33.Final
-- postgresql.version = 42.7.1
+- postgresql.version = 42.6.0
+- liquibase.version = 3.10.3
+- h2.version = 2.1.214
+- httpclient.version = 4.5.14
 - jetty.version = 9.4.52.v20230823
-- And 17 more version properties...
+- And more version properties...
 
 **Zero hardcoded versions in dependencies** - all use `${property}` references.
 
+## Feature Highlights
+
+- **External HTTP client + JSON DTO mapping**: `ExternalTodoClient` uses Apache `CloseableHttpClient` to call an external REST API and Jackson `ObjectMapper` to deserialize the response into `ExternalTodoDTO`. Covered by `ExternalTodoClientTest` (unit, mocked) and `ExternalTodoClientIntegrationTest` (raw-socket local HTTP server).
+- **Context-scoped Liquibase changesets**: changesets can be tagged `context="application"` (PostgreSQL) or `context="integration-test"` (H2) so different DDL runs per database. Verified by `LiquibaseContextIntegrationTest` and `ApplicationDatabaseStartupIntegrationTest`.
+- **Datasource configuration tests**: `DataSourceConfigurationTest` validates both the PostgreSQL/C3P0 `dataSource()` bean and the H2 `integrationTestDataSource()` bean.
+- **Enum persisted to DB**: `DocumentShare.permissionType` is a `SharePermission` enum (`VIEW`/`EDIT`/`ADMIN`) mapped with `@Enumerated(EnumType.STRING)`.
+- **`GenerationType.AUTO` + latest-by-id lookup**: `DocumentAccessLog` uses `GenerationType.AUTO` with an explicit `@SequenceGenerator`. `DocumentService.getLatestAccessLogById()` fetches the highest-ID row via `findFirstByOrderByIdDesc()`.
+
 ## Known Issues & Notes
 
-1. **404 on user endpoints in dev profile**: This is expected. Dev profile intentionally disables `UserController`/`UserService` (no database), so there are no HTTP routes registered. The server itself starts and runs fine — check the startup logs for `✅ Jetty server started successfully`. Use `--spring.profiles.active=prod` to enable the `/api/users` endpoints.
+1. **H2 identity-insert compatibility**: H2 2.x rejects an explicit `NULL` value for `AUTO_INCREMENT`/identity columns, but Hibernate 5.4's `H2Dialect` still generates `NULL` in the identity-insert SQL. `H2CompatibleDialect` (extends `H2Dialect`) overrides `getIdentityColumnSupport()` to emit `default` instead, and is used wherever the `integration-test` profile configures Hibernate.
 
-2. **Dev Profile Architecture**: 
-   - No database dependencies (UserService and UserController disabled via @Profile("prod"))
-   - JPA repositories NOT enabled (only in prod/test/integration-test profiles)
-   - EntityManagerFactory NOT created
-   - Allows clean development without PostgreSQL setup
-   - Use prod profile for full application features
+2. **Some pre-existing `src/integration-test/java` classes are excluded from Failsafe**: `DocumentCollaborationIntegrationTest`, `DocumentControllerIntegrationTest`, `DocumentRepositoryIntegrationTest`, `DocumentSharingIntegrationTest`, and `DocumentAuditIntegrationTest` are excluded in `pom.xml` because they fail for reasons unrelated to the features above (H2 2.x boolean-literal SQL strictness, and seed SQL scripts inserting hardcoded PKs that collide with the identity sequence).
 
-3. **Startup Time**: Application starts quickly (~3 seconds in dev, longer with database in prod)
+3. **Startup Time**: Application starts quickly (~3 seconds), longer if the database connection is slow to establish.

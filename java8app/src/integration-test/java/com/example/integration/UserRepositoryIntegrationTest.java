@@ -1,15 +1,16 @@
 package com.example.integration;
 
-import com.example.Application;
 import com.example.entity.User;
 import com.example.repository.UserRepository;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -19,8 +20,11 @@ import static org.junit.Assert.*;
  * Integration Test for UserRepository using H2 database
  */
 @RunWith(SpringRunner.class)
-@DataJpaTest
-@ActiveProfiles("test")
+@ContextConfiguration(loader = AnnotationConfigContextLoader.class, classes = {
+        IntegrationTestConfig.class
+})
+@ActiveProfiles("integration-test")
+@Transactional
 public class UserRepositoryIntegrationTest {
     
     @Autowired

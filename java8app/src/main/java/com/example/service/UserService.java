@@ -1,5 +1,6 @@
 package com.example.service;
 
+import com.example.dto.UserDTO;
 import com.example.entity.User;
 import com.example.repository.UserRepository;
 import org.slf4j.Logger;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * User Service - Business logic for user management
@@ -56,6 +58,21 @@ public class UserService {
         logger.info("Fetching user with username: {}", username);
         return userRepository.findByUsername(username);
     }
+
+    @Transactional(readOnly = true)
+    public List<UserDTO> getAllUsersAsDTO() {
+        return userRepository.findAll().stream().map(this::entityToDTO).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserDTO> getUserByIdAsDTO(Long id) {
+        return userRepository.findById(id).map(this::entityToDTO);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<UserDTO> getUserByUsernameAsDTO(String username) {
+        return userRepository.findByUsername(username).map(this::entityToDTO);
+    }
     
     /**
      * Create a new user
@@ -69,6 +86,10 @@ public class UserService {
         }
         return userRepository.save(user);
     }
+
+    public UserDTO createUserAsDTO(User user) {
+        return entityToDTO(createUser(user));
+    }
     
     /**
      * Update an existing user
@@ -77,10 +98,26 @@ public class UserService {
      */
     public User updateUser(User user) {
         logger.info("Updating user with ID: {}", user.getId());
-        if (!userRepository.existsById(user.getId())) {
+        Optional<User> existingUser = userRepository.findById(user.getId());
+        if (!existingUser.isPresent()) {
             throw new IllegalArgumentException("User not found with ID: " + user.getId());
         }
-        return userRepository.save(user);
+        User userToUpdate = existingUser.get();
+        if (user.getUsername() != null) userToUpdate.setUsername(user.getUsername());
+        if (user.getEmail() != null) userToUpdate.setEmail(user.getEmail());
+        if (user.getFullName() != null) userToUpdate.setFullName(user.getFullName());
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) userToUpdate.setPassword(user.getPassword());
+        if (user.getActive() != null) userToUpdate.setActive(user.getActive());
+        return userRepository.save(userToUpdate);
+    }
+
+    public UserDTO updateUserAsDTO(User user) {
+        return entityToDTO(updateUser(user));
+    }
+
+    private UserDTO entityToDTO(User user) {
+        return new UserDTO(user.getId(), user.getUsername(), user.getEmail(), user.getFullName(),
+                user.getCreatedAt(), user.getUpdatedAt());
     }
     
     /**

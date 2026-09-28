@@ -3,7 +3,8 @@ package com.example.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
-import org.apache.http.client.HttpClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 /**
@@ -26,10 +27,15 @@ public class AppConfig {
      * @return HttpClient instance
      */
     @Bean
-    public HttpClient httpClient() {
+    public CloseableHttpClient httpClient() {
         return HttpClientBuilder.create()
                 .setMaxConnTotal(100)
                 .setMaxConnPerRoute(10)
                 .build();
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper();
     }
 }
